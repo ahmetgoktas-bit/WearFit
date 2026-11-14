@@ -30,6 +30,7 @@ id etTitle
 id progressScan
 id rvDevices
 id tvBattery
+id tvBloodPressure
 id tvCalories
 id tvConnectedDeviceAddress
 id tvConnectedDeviceName
@@ -39,6 +40,7 @@ id tvDeviceName
 id tvEmptyDevices
 id tvHeartRate
 id tvRssi
+id tvSpO2
 id tvSteps
 layout activity_main
 layout dialog_test_notification
@@ -60,8 +62,10 @@ string connected_device
 string dialog_test_title
 string hint_notification_text
 string hint_notification_title
+string label_blood_pressure
 string label_calories
 string label_heart_rate
+string label_spo2
 string label_steps
 string no_device_connected
 string notification_service_label

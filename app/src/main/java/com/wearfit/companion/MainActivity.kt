@@ -123,8 +123,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSyncHealth.setOnClickListener {
             bleManager.queryHealth()
-            bleManager.queryBattery()
-            Toast.makeText(this, "Sensör verileri talep edildi", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Sensörler ve nabız ölçümü başlatıldı (Saati kolunuza takın)", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnTestNotification.setOnClickListener {
@@ -192,6 +191,12 @@ class MainActivity : AppCompatActivity() {
                             binding.tvSteps.text = data.steps.toString()
                             binding.tvHeartRate.text = if (data.heartRate > 0) "${data.heartRate} bpm" else "-- bpm"
                             binding.tvCalories.text = data.calories.toString()
+                            binding.tvBloodPressure.text = if (data.bloodPressureSys > 0 && data.bloodPressureDia > 0) {
+                                "${data.bloodPressureSys}/${data.bloodPressureDia}"
+                            } else {
+                                "--/--"
+                            }
+                            binding.tvSpO2.text = if (data.spO2 > 0) "%${data.spO2}" else "--%"
                         }
                     }
                 }

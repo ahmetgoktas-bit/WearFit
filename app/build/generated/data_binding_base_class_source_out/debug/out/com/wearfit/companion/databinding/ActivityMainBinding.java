@@ -60,6 +60,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvBattery;
 
   @NonNull
+  public final TextView tvBloodPressure;
+
+  @NonNull
   public final TextView tvCalories;
 
   @NonNull
@@ -78,6 +81,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvHeartRate;
 
   @NonNull
+  public final TextView tvSpO2;
+
+  @NonNull
   public final TextView tvSteps;
 
   private ActivityMainBinding(@NonNull CoordinatorLayout rootView,
@@ -86,10 +92,11 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull MaterialButton btnSyncHealth, @NonNull MaterialButton btnSyncTime,
       @NonNull MaterialButton btnTestNotification, @NonNull MaterialCardView cardConnectedDevice,
       @NonNull MaterialCardView cardNotificationPermission, @NonNull ProgressBar progressScan,
-      @NonNull RecyclerView rvDevices, @NonNull TextView tvBattery, @NonNull TextView tvCalories,
+      @NonNull RecyclerView rvDevices, @NonNull TextView tvBattery,
+      @NonNull TextView tvBloodPressure, @NonNull TextView tvCalories,
       @NonNull TextView tvConnectedDeviceAddress, @NonNull TextView tvConnectedDeviceName,
       @NonNull TextView tvConnectionStatus, @NonNull TextView tvEmptyDevices,
-      @NonNull TextView tvHeartRate, @NonNull TextView tvSteps) {
+      @NonNull TextView tvHeartRate, @NonNull TextView tvSpO2, @NonNull TextView tvSteps) {
     this.rootView = rootView;
     this.btnDisconnect = btnDisconnect;
     this.btnFindDevice = btnFindDevice;
@@ -103,12 +110,14 @@ public final class ActivityMainBinding implements ViewBinding {
     this.progressScan = progressScan;
     this.rvDevices = rvDevices;
     this.tvBattery = tvBattery;
+    this.tvBloodPressure = tvBloodPressure;
     this.tvCalories = tvCalories;
     this.tvConnectedDeviceAddress = tvConnectedDeviceAddress;
     this.tvConnectedDeviceName = tvConnectedDeviceName;
     this.tvConnectionStatus = tvConnectionStatus;
     this.tvEmptyDevices = tvEmptyDevices;
     this.tvHeartRate = tvHeartRate;
+    this.tvSpO2 = tvSpO2;
     this.tvSteps = tvSteps;
   }
 
@@ -211,6 +220,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvBloodPressure;
+      TextView tvBloodPressure = ViewBindings.findChildViewById(rootView, id);
+      if (tvBloodPressure == null) {
+        break missingId;
+      }
+
       id = R.id.tvCalories;
       TextView tvCalories = ViewBindings.findChildViewById(rootView, id);
       if (tvCalories == null) {
@@ -247,6 +262,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvSpO2;
+      TextView tvSpO2 = ViewBindings.findChildViewById(rootView, id);
+      if (tvSpO2 == null) {
+        break missingId;
+      }
+
       id = R.id.tvSteps;
       TextView tvSteps = ViewBindings.findChildViewById(rootView, id);
       if (tvSteps == null) {
@@ -256,8 +277,8 @@ public final class ActivityMainBinding implements ViewBinding {
       return new ActivityMainBinding((CoordinatorLayout) rootView, btnDisconnect, btnFindDevice,
           btnGrantNotificationAccess, btnScan, btnSyncHealth, btnSyncTime, btnTestNotification,
           cardConnectedDevice, cardNotificationPermission, progressScan, rvDevices, tvBattery,
-          tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName, tvConnectionStatus,
-          tvEmptyDevices, tvHeartRate, tvSteps);
+          tvBloodPressure, tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName,
+          tvConnectionStatus, tvEmptyDevices, tvHeartRate, tvSpO2, tvSteps);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

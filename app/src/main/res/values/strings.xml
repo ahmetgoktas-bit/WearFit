@@ -26,6 +26,8 @@
     <string name="label_steps">Adım</string>
     <string name="label_heart_rate">Nabız (BPM)</string>
     <string name="label_calories">Kalori (kcal)</string>
+    <string name="label_blood_pressure">Tansiyon (mmHg)</string>
+    <string name="label_spo2">SpO2 (Oksijen)</string>
 
     <!-- Permissions -->
     <string name="permission_bluetooth_required">Akıllı saat ile haberleşmek için Bluetooth izinleri gereklidir.</string>

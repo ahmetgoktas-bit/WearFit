@@ -30,8 +30,10 @@
     <string name="dialog_test_title">Test Bildirimi</string>
     <string name="hint_notification_text">Mesaj (örn: Selam, neredesin?)</string>
     <string name="hint_notification_title">Başlık (örn: WhatsApp - Ahmet)</string>
+    <string name="label_blood_pressure">Tansiyon (mmHg)</string>
     <string name="label_calories">Kalori (kcal)</string>
     <string name="label_heart_rate">Nabız (BPM)</string>
+    <string name="label_spo2">SpO2 (Oksijen)</string>
     <string name="label_steps">Adım</string>
     <string name="no_device_connected">Bağlı bir akıllı saat bulunmuyor.</string>
     <string name="notification_service_label">WearFit Bildirim İletici Servisi</string>

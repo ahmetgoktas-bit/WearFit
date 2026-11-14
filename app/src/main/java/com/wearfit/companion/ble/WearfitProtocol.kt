@@ -13,6 +13,7 @@ object WearfitProtocol {
     const val DELIMITER: Byte = 0xFF.toByte()
 
     // Command IDs
+    const val CMD_HEART_RATE: Byte = 0x31.toByte()
     const val CMD_HEALTH_DATA: Byte = 0x32.toByte()
     const val CMD_STEPS_TODAY: Byte = 0x51.toByte()
     const val CMD_STEPS_HISTORY: Byte = 0x52.toByte()
@@ -104,6 +105,38 @@ object WearfitProtocol {
     }
 
     /**
+     * Builds packet to start real-time optical heart rate (BPM) measurement.
+     * Format: AB 00 04 FF 31 80 01
+     */
+    fun buildHeartRateStartCommand(): ByteArray {
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x04,
+            DELIMITER,
+            CMD_HEART_RATE,
+            0x80.toByte(),
+            0x01
+        )
+    }
+
+    /**
+     * Builds packet to stop optical heart rate measurement.
+     * Format: AB 00 04 FF 31 80 00
+     */
+    fun buildHeartRateStopCommand(): ByteArray {
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x04,
+            DELIMITER,
+            CMD_HEART_RATE,
+            0x80.toByte(),
+            0x00
+        )
+    }
+
+    /**
      * Builds packet to query health data (heart rate, spO2).
      * Format: AB 00 04 FF 32 80 00
      */
@@ -179,7 +212,7 @@ object WearfitProtocol {
     fun parseIncomingPacket(
         data: ByteArray,
         onBatteryReceived: (Int) -> Unit,
-        onHealthReceived: (steps: Int, hr: Int, cal: Int) -> Unit
+        onHealthReceived: (steps: Int, hr: Int, cal: Int, bpSys: Int, bpDia: Int, spO2: Int) -> Unit
     ) {
         if (data.size < 5 || data[0] != HEADER) return
 
@@ -196,34 +229,69 @@ object WearfitProtocol {
                 }
             }
             CMD_STEPS_TODAY, CMD_STEPS_HISTORY -> {
-                // Steps data packet (0x51 / 0x52)
-                // Format: AB 00 19 FF 51 20 [YY] [MM] [DD] [HH] [StepH] [StepM] [StepL] [CalH] [CalM] [CalL] ...
-                if (data.size >= 16 && data[5] == 0x20.toByte()) {
-                    val steps = ((data[10].toInt() and 0xFF) shl 16) or
-                                ((data[11].toInt() and 0xFF) shl 8) or
-                                (data[12].toInt() and 0xFF)
-                    val cal = ((data[13].toInt() and 0xFF) shl 16) or
-                              ((data[14].toInt() and 0xFF) shl 8) or
-                              (data[15].toInt() and 0xFF)
-                    if (steps in 0..300000) {
-                        onHealthReceived(steps, -1, cal)
+                // Wearfit Health Telemetry (0x51 / 0x52)
+                val subType = if (data.size > 5) data[5].toInt() and 0xFF else -1
+                when (subType) {
+                    0x20 -> {
+                        // Steps & Calories packet
+                        // Format: AB 00 19 FF 51 20 [YY] [MM] [DD] [HH] [StepH] [StepM] [StepL] [CalH] [CalM] [CalL] ...
+                        if (data.size >= 16) {
+                            val steps = ((data[10].toInt() and 0xFF) shl 16) or
+                                        ((data[11].toInt() and 0xFF) shl 8) or
+                                        (data[12].toInt() and 0xFF)
+                            val cal = ((data[13].toInt() and 0xFF) shl 16) or
+                                      ((data[14].toInt() and 0xFF) shl 8) or
+                                      (data[15].toInt() and 0xFF)
+                            if (steps in 0..300000) {
+                                onHealthReceived(steps, -1, cal, -1, -1, -1)
+                            }
+                        }
                     }
-                } else if (data.size >= 12) {
-                    val steps = ((data[6].toInt() and 0xFF) shl 16) or
-                                ((data[7].toInt() and 0xFF) shl 8) or
-                                (data[8].toInt() and 0xFF)
-                    if (steps in 0..300000) {
-                        onHealthReceived(steps, -1, -1)
+                    0x12 -> {
+                        // Heart Rate (BPM) record packet!
+                        // Format: AB 00 0A FF 51 12 [YY] [MM] [DD] [HH] [00] [HR] [HR]
+                        if (data.size >= 12) {
+                            val hr = data[11].toInt() and 0xFF
+                            if (hr in 40..220) {
+                                onHealthReceived(-1, hr, -1, -1, -1, -1)
+                            }
+                        }
+                    }
+                    0x14 -> {
+                        // Blood Pressure record packet!
+                        // Format: AB 00 0A FF 51 14 [YY] [MM] [DD] [HH] [00] [Sys] [Dia]
+                        if (data.size >= 13) {
+                            val sys = data[11].toInt() and 0xFF
+                            val dia = data[12].toInt() and 0xFF
+                            if (sys in 60..240 && dia in 30..150) {
+                                onHealthReceived(-1, -1, -1, sys, dia, -1)
+                            }
+                        }
+                    }
+                    0x11 -> {
+                        // SpO2 (Blood Oxygen) record packet!
+                        // Format: AB 00 0A FF 51 11 [YY] [MM] [DD] [HH] [00] [SpO2] [00]
+                        if (data.size >= 12) {
+                            val spo2 = data[11].toInt() and 0xFF
+                            if (spo2 in 70..100) {
+                                onHealthReceived(-1, -1, -1, -1, -1, spo2)
+                            }
+                        }
                     }
                 }
             }
-            CMD_HEALTH_DATA -> {
-                // Health telemetry packet (0x32)
-                if (data.size >= 10) {
-                    val hr = data[data.size - 1].toInt() and 0xFF
-                    if (hr in 30..220) {
-                        onHealthReceived(-1, hr, -1)
+            CMD_HEART_RATE, CMD_HEALTH_DATA -> {
+                // Heart rate / Health packet (0x31 / 0x32)
+                var foundHr = -1
+                for (i in 6 until data.size) {
+                    val candidate = data[i].toInt() and 0xFF
+                    if (candidate in 40..210) {
+                        foundHr = candidate
+                        break
                     }
+                }
+                if (foundHr > 0) {
+                    onHealthReceived(-1, foundHr, -1, -1, -1, -1)
                 }
             }
         }

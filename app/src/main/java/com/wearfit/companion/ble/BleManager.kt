@@ -276,12 +276,15 @@ class BleManager private constructor(private val context: Context) {
                 Log.i(TAG, "Parsed Battery from Wearfit packet: $percent%")
                 _watchData.value = _watchData.value.copy(batteryPercent = percent)
             },
-            onHealthReceived = { steps, hr, cal ->
-                Log.i(TAG, "Parsed Health: Steps=$steps, HR=$hr, Cal=$cal")
+            onHealthReceived = { steps, hr, cal, bpSys, bpDia, spO2 ->
+                Log.i(TAG, "Parsed Health: Steps=$steps, HR=$hr, Cal=$cal, BP=$bpSys/$bpDia, SpO2=$spO2")
                 _watchData.value = _watchData.value.copy(
                     steps = if (steps >= 0) steps else _watchData.value.steps,
                     heartRate = if (hr > 0) hr else _watchData.value.heartRate,
-                    calories = if (cal >= 0) cal else _watchData.value.calories
+                    calories = if (cal >= 0) cal else _watchData.value.calories,
+                    bloodPressureSys = if (bpSys > 0) bpSys else _watchData.value.bloodPressureSys,
+                    bloodPressureDia = if (bpDia > 0) bpDia else _watchData.value.bloodPressureDia,
+                    spO2 = if (spO2 > 0) spO2 else _watchData.value.spO2
                 )
             }
         )
@@ -407,9 +410,26 @@ class BleManager private constructor(private val context: Context) {
     fun queryHealth() {
         sendCommand(WearfitProtocol.buildStepsQueryCommand())
         scope.launch {
-            delay(200)
-            sendCommand(WearfitProtocol.buildHealthQueryCommand())
+            delay(250)
+            sendCommand(WearfitProtocol.buildBatteryQueryCommand())
+            delay(250)
+            startHeartRateMeasurement()
         }
+    }
+
+    fun startHeartRateMeasurement() {
+        Log.i(TAG, "Starting optical heart rate sensor measurement")
+        sendCommand(WearfitProtocol.buildHeartRateStartCommand())
+        // Auto-stop measurement after 35 seconds to save watch battery
+        scope.launch {
+            delay(35000)
+            stopHeartRateMeasurement()
+        }
+    }
+
+    fun stopHeartRateMeasurement() {
+        Log.i(TAG, "Stopping optical heart rate sensor")
+        sendCommand(WearfitProtocol.buildHeartRateStopCommand())
     }
 
     fun findDevice(enable: Boolean = true) {
