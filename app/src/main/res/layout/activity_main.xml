@@ -303,6 +303,16 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/tvLastHealthSync"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="Otomatik Ölçüm: 5 dakikada bir | Son: --:--"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"

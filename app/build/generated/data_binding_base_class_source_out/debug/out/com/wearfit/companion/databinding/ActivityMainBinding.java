@@ -81,6 +81,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvHeartRate;
 
   @NonNull
+  public final TextView tvLastHealthSync;
+
+  @NonNull
   public final TextView tvSpO2;
 
   @NonNull
@@ -96,7 +99,8 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull TextView tvBloodPressure, @NonNull TextView tvCalories,
       @NonNull TextView tvConnectedDeviceAddress, @NonNull TextView tvConnectedDeviceName,
       @NonNull TextView tvConnectionStatus, @NonNull TextView tvEmptyDevices,
-      @NonNull TextView tvHeartRate, @NonNull TextView tvSpO2, @NonNull TextView tvSteps) {
+      @NonNull TextView tvHeartRate, @NonNull TextView tvLastHealthSync, @NonNull TextView tvSpO2,
+      @NonNull TextView tvSteps) {
     this.rootView = rootView;
     this.btnDisconnect = btnDisconnect;
     this.btnFindDevice = btnFindDevice;
@@ -117,6 +121,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.tvConnectionStatus = tvConnectionStatus;
     this.tvEmptyDevices = tvEmptyDevices;
     this.tvHeartRate = tvHeartRate;
+    this.tvLastHealthSync = tvLastHealthSync;
     this.tvSpO2 = tvSpO2;
     this.tvSteps = tvSteps;
   }
@@ -262,6 +267,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvLastHealthSync;
+      TextView tvLastHealthSync = ViewBindings.findChildViewById(rootView, id);
+      if (tvLastHealthSync == null) {
+        break missingId;
+      }
+
       id = R.id.tvSpO2;
       TextView tvSpO2 = ViewBindings.findChildViewById(rootView, id);
       if (tvSpO2 == null) {
@@ -278,7 +289,7 @@ public final class ActivityMainBinding implements ViewBinding {
           btnGrantNotificationAccess, btnScan, btnSyncHealth, btnSyncTime, btnTestNotification,
           cardConnectedDevice, cardNotificationPermission, progressScan, rvDevices, tvBattery,
           tvBloodPressure, tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName,
-          tvConnectionStatus, tvEmptyDevices, tvHeartRate, tvSpO2, tvSteps);
+          tvConnectionStatus, tvEmptyDevices, tvHeartRate, tvLastHealthSync, tvSpO2, tvSteps);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

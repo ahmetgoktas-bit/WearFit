@@ -3481,6 +3481,7 @@ id tvDeviceAddress
 id tvDeviceName
 id tvEmptyDevices
 id tvHeartRate
+id tvLastHealthSync
 id tvRssi
 id tvSpO2
 id tvSteps

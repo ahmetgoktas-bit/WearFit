@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSyncHealth.setOnClickListener {
             bleManager.queryHealth()
-            Toast.makeText(this, "Sensörler ve nabız ölçümü başlatıldı (Saati kolunuza takın)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Sensörler 15 sn okuyup otomatik kapanacak", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnTestNotification.setOnClickListener {
@@ -197,6 +197,11 @@ class MainActivity : AppCompatActivity() {
                                 "--/--"
                             }
                             binding.tvSpO2.text = if (data.spO2 > 0) "%${data.spO2}" else "--%"
+                            binding.tvLastHealthSync.text = if (data.lastSyncTime.isNotBlank()) {
+                                "Otomatik Ölçüm: 5 dk'da bir | Son: ${data.lastSyncTime}"
+                            } else {
+                                "Otomatik Ölçüm: 5 dk'da bir | Bekleniyor…"
+                            }
                         }
                     }
                 }

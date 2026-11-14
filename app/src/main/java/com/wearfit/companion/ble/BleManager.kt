@@ -12,6 +12,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 enum class ConnectionState {
@@ -212,6 +215,7 @@ class BleManager private constructor(private val context: Context) {
                 queryBattery()
                 delay(400)
                 queryHealth()
+                startPeriodicHealthSync()
             }
         }
 
@@ -278,13 +282,15 @@ class BleManager private constructor(private val context: Context) {
             },
             onHealthReceived = { steps, hr, cal, bpSys, bpDia, spO2 ->
                 Log.i(TAG, "Parsed Health: Steps=$steps, HR=$hr, Cal=$cal, BP=$bpSys/$bpDia, SpO2=$spO2")
+                val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
                 _watchData.value = _watchData.value.copy(
                     steps = if (steps >= 0) steps else _watchData.value.steps,
                     heartRate = if (hr > 0) hr else _watchData.value.heartRate,
                     calories = if (cal >= 0) cal else _watchData.value.calories,
                     bloodPressureSys = if (bpSys > 0) bpSys else _watchData.value.bloodPressureSys,
                     bloodPressureDia = if (bpDia > 0) bpDia else _watchData.value.bloodPressureDia,
-                    spO2 = if (spO2 > 0) spO2 else _watchData.value.spO2
+                    spO2 = if (spO2 > 0) spO2 else _watchData.value.spO2,
+                    lastSyncTime = currentTime
                 )
             }
         )
@@ -300,6 +306,9 @@ class BleManager private constructor(private val context: Context) {
     @SuppressLint("MissingPermission")
     fun disconnect() {
         Log.i(TAG, "Explicit disconnect requested")
+        stopPeriodicHealthSync()
+        stopHeartRateMeasurement()
+        WearfitProtocol.resetTimestamps()
         val gatt = bluetoothGatt ?: run {
             _connectionState.value = ConnectionState.DISCONNECTED
             _watchData.value = WatchData(isConnected = false)
@@ -418,11 +427,11 @@ class BleManager private constructor(private val context: Context) {
     }
 
     fun startHeartRateMeasurement() {
-        Log.i(TAG, "Starting optical heart rate sensor measurement")
+        Log.i(TAG, "Starting optical heart rate sensor measurement (15s)")
         sendCommand(WearfitProtocol.buildHeartRateStartCommand())
-        // Auto-stop measurement after 35 seconds to save watch battery
+        // Auto-stop measurement after 15 seconds so optical LED does NOT stay on continuously
         scope.launch {
-            delay(35000)
+            delay(15000)
             stopHeartRateMeasurement()
         }
     }
@@ -430,6 +439,28 @@ class BleManager private constructor(private val context: Context) {
     fun stopHeartRateMeasurement() {
         Log.i(TAG, "Stopping optical heart rate sensor")
         sendCommand(WearfitProtocol.buildHeartRateStopCommand())
+    }
+
+    private var periodicJob: Job? = null
+
+    private fun startPeriodicHealthSync() {
+        periodicJob?.cancel()
+        periodicJob = scope.launch {
+            while (isActive) {
+                delay(5 * 60 * 1000L) // Every 5 minutes
+                if (_connectionState.value == ConnectionState.CONNECTED) {
+                    Log.i(TAG, "Periodic 5-minute health reading triggered")
+                    queryHealth()
+                } else {
+                    break
+                }
+            }
+        }
+    }
+
+    private fun stopPeriodicHealthSync() {
+        periodicJob?.cancel()
+        periodicJob = null
     }
 
     fun findDevice(enable: Boolean = true) {

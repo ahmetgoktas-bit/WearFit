@@ -22,6 +22,28 @@ object WearfitProtocol {
     const val CMD_BATTERY: Byte = 0x91.toByte()
     const val CMD_SET_TIME: Byte = 0x93.toByte()
 
+    private var latestStepsTimestamp: Long = 0L
+    private var latestHrTimestamp: Long = 0L
+    private var latestBpTimestamp: Long = 0L
+    private var latestSpo2Timestamp: Long = 0L
+
+    fun resetTimestamps() {
+        latestStepsTimestamp = 0L
+        latestHrTimestamp = 0L
+        latestBpTimestamp = 0L
+        latestSpo2Timestamp = 0L
+    }
+
+    private fun getTimestamp(data: ByteArray): Long {
+        if (data.size < 11) return 0L
+        val y = (data[6].toInt() and 0xFF).toLong()
+        val m = (data[7].toInt() and 0xFF).toLong()
+        val d = (data[8].toInt() and 0xFF).toLong()
+        val h = (data[9].toInt() and 0xFF).toLong()
+        val min = (data[10].toInt() and 0xFF).toLong()
+        return (y * 100000000L) + (m * 1000000L) + (d * 10000L) + (h * 100L) + min
+    }
+
     // Notification App Type IDs
     object AppId {
         const val CALL: Byte = 0x01
@@ -231,11 +253,13 @@ object WearfitProtocol {
             CMD_STEPS_TODAY, CMD_STEPS_HISTORY -> {
                 // Wearfit Health Telemetry (0x51 / 0x52)
                 val subType = if (data.size > 5) data[5].toInt() and 0xFF else -1
+                val ts = getTimestamp(data)
                 when (subType) {
                     0x20 -> {
                         // Steps & Calories packet
                         // Format: AB 00 19 FF 51 20 [YY] [MM] [DD] [HH] [StepH] [StepM] [StepL] [CalH] [CalM] [CalL] ...
-                        if (data.size >= 16) {
+                        if (data.size >= 16 && ts >= latestStepsTimestamp) {
+                            latestStepsTimestamp = ts
                             val steps = ((data[10].toInt() and 0xFF) shl 16) or
                                         ((data[11].toInt() and 0xFF) shl 8) or
                                         (data[12].toInt() and 0xFF)
@@ -247,34 +271,37 @@ object WearfitProtocol {
                             }
                         }
                     }
-                    0x12 -> {
+                    0x11 -> {
                         // Heart Rate (BPM) record packet!
-                        // Format: AB 00 0A FF 51 12 [YY] [MM] [DD] [HH] [00] [HR] [HR]
-                        if (data.size >= 12) {
+                        // Format: AB 00 0A FF 51 11 [YY] [MM] [DD] [HH] [00] [HR] [00]
+                        if (data.size >= 12 && ts >= latestHrTimestamp) {
+                            latestHrTimestamp = ts
                             val hr = data[11].toInt() and 0xFF
                             if (hr in 40..220) {
                                 onHealthReceived(-1, hr, -1, -1, -1, -1)
                             }
                         }
                     }
+                    0x12 -> {
+                        // SpO2 (Blood Oxygen) record packet!
+                        // Format: AB 00 0A FF 51 12 [YY] [MM] [DD] [HH] [00] [SpO2] [SpO2]
+                        if (data.size >= 12 && ts >= latestSpo2Timestamp) {
+                            latestSpo2Timestamp = ts
+                            val spo2 = data[11].toInt() and 0xFF
+                            if (spo2 in 70..100) {
+                                onHealthReceived(-1, -1, -1, -1, -1, spo2)
+                            }
+                        }
+                    }
                     0x14 -> {
                         // Blood Pressure record packet!
                         // Format: AB 00 0A FF 51 14 [YY] [MM] [DD] [HH] [00] [Sys] [Dia]
-                        if (data.size >= 13) {
+                        if (data.size >= 13 && ts >= latestBpTimestamp) {
+                            latestBpTimestamp = ts
                             val sys = data[11].toInt() and 0xFF
                             val dia = data[12].toInt() and 0xFF
                             if (sys in 60..240 && dia in 30..150) {
                                 onHealthReceived(-1, -1, -1, sys, dia, -1)
-                            }
-                        }
-                    }
-                    0x11 -> {
-                        // SpO2 (Blood Oxygen) record packet!
-                        // Format: AB 00 0A FF 51 11 [YY] [MM] [DD] [HH] [00] [SpO2] [00]
-                        if (data.size >= 12) {
-                            val spo2 = data[11].toInt() and 0xFF
-                            if (spo2 in 70..100) {
-                                onHealthReceived(-1, -1, -1, -1, -1, spo2)
                             }
                         }
                     }

@@ -8,6 +8,7 @@ data class WatchData(
     val bloodPressureDia: Int = 0,
     val spO2: Int = 0,
     val calories: Int = 0,
+    val lastSyncTime: String = "",
     val isConnected: Boolean = false,
     val deviceName: String = "",
     val deviceAddress: String = ""
