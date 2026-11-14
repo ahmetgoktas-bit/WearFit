@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent_green">#00E676</color>
+    <color name="accent_orange">#FF9100</color>
+    <color name="accent_red">#FF5252</color>
+    <color name="background_dark">#12141C</color>
+    <color name="divider_color">#333A50</color>
+    <color name="on_primary">#000000</color>
+    <color name="primary">#00E5FF</color>
+    <color name="primary_variant">#00B0FF</color>
+    <color name="secondary">#7C4DFF</color>
+    <color name="surface_card">#272C3E</color>
+    <color name="surface_dark">#1E2230</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#9E9EB0</color>
+    <string name="action_find_device">Saati Bul (Titreşim)</string>
+    <string name="action_sync_health">Sensörleri Oku</string>
+    <string name="action_sync_time">Saati Eşitle</string>
+    <string name="action_test_notification">Test Bildirimi Gönder</string>
+    <string name="app_name">WearFit Companion</string>
+    <string name="battery_level">Pil: %1$d%%</string>
+    <string name="btn_cancel">İptal</string>
+    <string name="btn_disconnect">Bağlantıyı Kes</string>
+    <string name="btn_grant_notification_access">Bildirim İznini Aç</string>
+    <string name="btn_grant_permission">İzin Ver</string>
+    <string name="btn_scan">Cihaz Ara</string>
+    <string name="btn_send">Gönder</string>
+    <string name="btn_stop_scan">Aramayı Durdur</string>
+    <string name="connected_device">Bağlı Cihaz</string>
+    <string name="dialog_test_title">Test Bildirimi</string>
+    <string name="hint_notification_text">Mesaj (örn: Selam, neredesin?)</string>
+    <string name="hint_notification_title">Başlık (örn: WhatsApp - Ahmet)</string>
+    <string name="label_calories">Kalori (kcal)</string>
+    <string name="label_heart_rate">Nabız (BPM)</string>
+    <string name="label_steps">Adım</string>
+    <string name="no_device_connected">Bağlı bir akıllı saat bulunmuyor.</string>
+    <string name="notification_service_label">WearFit Bildirim İletici Servisi</string>
+    <string name="permission_bluetooth_required">Akıllı saat ile haberleşmek için Bluetooth izinleri gereklidir.</string>
+    <string name="permission_notification_access">Saat üzerinden WhatsApp ve bildirimleri görebilmek için Bildirim Erişimi iznini açın.</string>
+    <string name="status_connected">Bağlandı</string>
+    <string name="status_connecting">Bağlanılıyor…</string>
+    <string name="status_disconnected">Bağlantı Yok</string>
+    <string name="status_scanning">Cihazlar Aranıyor…</string>
+    <style name="Theme.WearFitCompanion" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="android:windowBackground">@color/background_dark</item>
+        <item name="android:statusBarColor">@color/background_dark</item>
+        <item name="android:navigationBarColor">@color/background_dark</item>
+    </style>
+</resources>

@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">WearFit Companion</string>
+    <string name="notification_service_label">WearFit Bildirim İletici Servisi</string>
+
+    <!-- UI Strings -->
+    <string name="status_disconnected">Bağlantı Yok</string>
+    <string name="status_scanning">Cihazlar Aranıyor…</string>
+    <string name="status_connecting">Bağlanılıyor…</string>
+    <string name="status_connected">Bağlandı</string>
+
+    <string name="btn_scan">Cihaz Ara</string>
+    <string name="btn_stop_scan">Aramayı Durdur</string>
+    <string name="btn_disconnect">Bağlantıyı Kes</string>
+
+    <string name="connected_device">Bağlı Cihaz</string>
+    <string name="battery_level">Pil: %1$d%%</string>
+    <string name="no_device_connected">Bağlı bir akıllı saat bulunmuyor.</string>
+
+    <!-- Quick Actions -->
+    <string name="action_sync_time">Saati Eşitle</string>
+    <string name="action_find_device">Saati Bul (Titreşim)</string>
+    <string name="action_sync_health">Sensörleri Oku</string>
+    <string name="action_test_notification">Test Bildirimi Gönder</string>
+
+    <!-- Health Metrics -->
+    <string name="label_steps">Adım</string>
+    <string name="label_heart_rate">Nabız (BPM)</string>
+    <string name="label_calories">Kalori (kcal)</string>
+
+    <!-- Permissions -->
+    <string name="permission_bluetooth_required">Akıllı saat ile haberleşmek için Bluetooth izinleri gereklidir.</string>
+    <string name="permission_notification_access">Saat üzerinden WhatsApp ve bildirimleri görebilmek için Bildirim Erişimi iznini açın.</string>
+    <string name="btn_grant_permission">İzin Ver</string>
+    <string name="btn_grant_notification_access">Bildirim İznini Aç</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_test_title">Test Bildirimi</string>
+    <string name="hint_notification_title">Başlık (örn: WhatsApp - Ahmet)</string>
+    <string name="hint_notification_text">Mesaj (örn: Selam, neredesin?)</string>
+    <string name="btn_send">Gönder</string>
+    <string name="btn_cancel">İptal</string>
+</resources>

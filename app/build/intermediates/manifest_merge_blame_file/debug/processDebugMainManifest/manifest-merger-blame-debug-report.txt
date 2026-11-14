@@ -1,0 +1,197 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.wearfit.companion"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="35" />
+10
+11    <!-- Bluetooth Permissions for Android 12+ (API 31+) -->
+12    <uses-permission
+12-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:6:5-9:31
+13        android:name="android.permission.BLUETOOTH_SCAN"
+13-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:7:9-57
+14        android:usesPermissionFlags="neverForLocation" />
+14-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:8:9-55
+15    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+15-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:10:5-12:31
+15-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:11:9-60
+16
+17    <!-- Legacy Bluetooth Permissions for Android 11 and below -->
+18    <uses-permission
+18-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:15:5-17:38
+19        android:name="android.permission.BLUETOOTH"
+19-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:16:9-52
+20        android:maxSdkVersion="30" />
+20-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:17:9-35
+21    <uses-permission
+21-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:18:5-20:38
+22        android:name="android.permission.BLUETOOTH_ADMIN"
+22-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:19:9-58
+23        android:maxSdkVersion="30" />
+23-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:20:9-35
+24    <uses-permission
+24-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:21:5-23:38
+25        android:name="android.permission.ACCESS_FINE_LOCATION"
+25-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:22:9-63
+26        android:maxSdkVersion="30" />
+26-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:23:9-35
+27    <uses-permission
+27-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:24:5-26:38
+28        android:name="android.permission.ACCESS_COARSE_LOCATION"
+28-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:25:9-65
+29        android:maxSdkVersion="30" />
+29-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:26:9-35
+30
+31    <!-- Notification Permission for Android 13+ -->
+32    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+32-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:29:5-77
+32-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:29:22-74
+33
+34    <uses-feature
+34-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:31:5-33:35
+35        android:name="android.hardware.bluetooth_le"
+35-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:32:9-53
+36        android:required="true" />
+36-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:33:9-32
+37
+38    <permission
+38-->[androidx.core:core:1.15.0] C:\Users\HP\.gradle\caches\8.9\transforms\be87e5a355ed6e2d72a0a31aa233504a\transformed\core-1.15.0\AndroidManifest.xml:22:5-24:47
+39        android:name="com.wearfit.companion.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+39-->[androidx.core:core:1.15.0] C:\Users\HP\.gradle\caches\8.9\transforms\be87e5a355ed6e2d72a0a31aa233504a\transformed\core-1.15.0\AndroidManifest.xml:23:9-81
+40        android:protectionLevel="signature" />
+40-->[androidx.core:core:1.15.0] C:\Users\HP\.gradle\caches\8.9\transforms\be87e5a355ed6e2d72a0a31aa233504a\transformed\core-1.15.0\AndroidManifest.xml:24:9-44
+41
+42    <uses-permission android:name="com.wearfit.companion.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+42-->[androidx.core:core:1.15.0] C:\Users\HP\.gradle\caches\8.9\transforms\be87e5a355ed6e2d72a0a31aa233504a\transformed\core-1.15.0\AndroidManifest.xml:26:5-97
+42-->[androidx.core:core:1.15.0] C:\Users\HP\.gradle\caches\8.9\transforms\be87e5a355ed6e2d72a0a31aa233504a\transformed\core-1.15.0\AndroidManifest.xml:26:22-94
+43
+44    <application
+44-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:35:5-65:19
+45        android:allowBackup="true"
+45-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:36:9-35
+46        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+46-->[androidx.core:core:1.15.0] C:\Users\HP\.gradle\caches\8.9\transforms\be87e5a355ed6e2d72a0a31aa233504a\transformed\core-1.15.0\AndroidManifest.xml:28:18-86
+47        android:dataExtractionRules="@xml/data_extraction_rules"
+47-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:37:9-65
+48        android:debuggable="true"
+49        android:extractNativeLibs="false"
+50        android:fullBackupContent="@xml/backup_rules"
+50-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:38:9-54
+51        android:icon="@drawable/ic_launcher"
+51-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:39:9-45
+52        android:label="@string/app_name"
+52-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:40:9-41
+53        android:roundIcon="@drawable/ic_launcher"
+53-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:41:9-50
+54        android:supportsRtl="true"
+54-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:42:9-35
+55        android:theme="@style/Theme.WearFitCompanion" >
+55-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:43:9-54
+56        <activity
+56-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:45:9-52:20
+57            android:name="com.wearfit.companion.MainActivity"
+57-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:46:13-41
+58            android:exported="true" >
+58-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:47:13-36
+59            <intent-filter>
+59-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:48:13-51:29
+60                <action android:name="android.intent.action.MAIN" />
+60-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:49:17-69
+60-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:49:25-66
+61
+62                <category android:name="android.intent.category.LAUNCHER" />
+62-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:50:17-77
+62-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:50:27-74
+63            </intent-filter>
+64        </activity>
+65
+66        <!-- Service to capture phone notifications and forward them to the watch -->
+67        <service
+67-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:55:9-63:19
+68            android:name="com.wearfit.companion.service.NotificationForwarderService"
+68-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:56:13-65
+69            android:exported="true"
+69-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:59:13-36
+70            android:label="@string/notification_service_label"
+70-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:57:13-63
+71            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
+71-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:58:13-87
+72            <intent-filter>
+72-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:60:13-62:29
+73                <action android:name="android.service.notification.NotificationListenerService" />
+73-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:61:17-99
+73-->C:\Users\HP\.copilot\repos\_privateProjects\WearFit\app\src\main\AndroidManifest.xml:61:25-96
+74            </intent-filter>
+75        </service>
+76
+77        <provider
+77-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+78            android:name="androidx.startup.InitializationProvider"
+78-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+79            android:authorities="com.wearfit.companion.androidx-startup"
+79-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+80            android:exported="false" >
+80-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+81            <meta-data
+81-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+82                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+82-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+83                android:value="androidx.startup" />
+83-->[androidx.emoji2:emoji2:1.3.0] C:\Users\HP\.gradle\caches\8.9\transforms\4f0d1742be2ce546323bb1258c308ac4\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+84            <meta-data
+84-->[androidx.lifecycle:lifecycle-process:2.8.7] C:\Users\HP\.gradle\caches\8.9\transforms\1f2ce758b27270df32aa13772979d45f\transformed\lifecycle-process-2.8.7\AndroidManifest.xml:29:13-31:52
+85                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+85-->[androidx.lifecycle:lifecycle-process:2.8.7] C:\Users\HP\.gradle\caches\8.9\transforms\1f2ce758b27270df32aa13772979d45f\transformed\lifecycle-process-2.8.7\AndroidManifest.xml:30:17-78
+86                android:value="androidx.startup" />
+86-->[androidx.lifecycle:lifecycle-process:2.8.7] C:\Users\HP\.gradle\caches\8.9\transforms\1f2ce758b27270df32aa13772979d45f\transformed\lifecycle-process-2.8.7\AndroidManifest.xml:31:17-49
+87            <meta-data
+87-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+88                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+88-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+89                android:value="androidx.startup" />
+89-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+90        </provider>
+91
+92        <receiver
+92-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+93            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+93-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+94            android:directBootAware="false"
+94-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+95            android:enabled="true"
+95-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+96            android:exported="true"
+96-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+97            android:permission="android.permission.DUMP" >
+97-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+98            <intent-filter>
+98-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+99                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+99-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+99-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+100            </intent-filter>
+101            <intent-filter>
+101-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+102                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+102-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+102-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+103            </intent-filter>
+104            <intent-filter>
+104-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+105                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+105-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+105-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+106            </intent-filter>
+107            <intent-filter>
+107-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+108                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+108-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+108-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\HP\.gradle\caches\8.9\transforms\a4a7211c78757b775e1f9a06cf417e2c\transformed\profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+109            </intent-filter>
+110        </receiver>
+111    </application>
+112
+113</manifest>
