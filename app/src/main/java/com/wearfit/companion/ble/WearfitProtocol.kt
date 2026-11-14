@@ -121,9 +121,10 @@ object WearfitProtocol {
 
     /**
      * Builds packet to trigger watch vibration (Find Watch / Saatimi Bul).
-     * Format: AB 00 04 FF 71 80 01
+     * enable = true (0x01) starts vibration, enable = false (0x00) stops vibration.
+     * Format: AB 00 04 FF 71 80 [01 / 00]
      */
-    fun buildFindDeviceCommand(): ByteArray {
+    fun buildFindDeviceCommand(enable: Boolean = true): ByteArray {
         return byteArrayOf(
             HEADER,
             0x00,
@@ -131,7 +132,7 @@ object WearfitProtocol {
             DELIMITER,
             CMD_FIND_DEVICE,
             0x80.toByte(),
-            0x01
+            if (enable) 0x01.toByte() else 0x00.toByte()
         )
     }
 

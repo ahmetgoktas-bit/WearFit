@@ -345,8 +345,8 @@ class BleManager private constructor(private val context: Context) {
         }
     }
 
-    fun findDevice() {
-        sendCommand(WearfitProtocol.buildFindDeviceCommand())
+    fun findDevice(enable: Boolean = true) {
+        sendCommand(WearfitProtocol.buildFindDeviceCommand(enable))
     }
 
     fun sendNotification(appId: Byte, text: String) {

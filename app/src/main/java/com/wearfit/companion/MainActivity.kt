@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bleManager: BleManager
     private lateinit var bleScanner: BleScanner
     private lateinit var deviceAdapter: DeviceAdapter
+    private var isFindingDevice = false
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -103,8 +104,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnFindDevice.setOnClickListener {
-            bleManager.findDevice()
-            Toast.makeText(this, "Titreşim komutu gönderildi", Toast.LENGTH_SHORT).show()
+            isFindingDevice = !isFindingDevice
+            bleManager.findDevice(isFindingDevice)
+            if (isFindingDevice) {
+                binding.btnFindDevice.text = "Durdur"
+                binding.btnFindDevice.setTextColor(ContextCompat.getColor(this, R.color.accent_red))
+                Toast.makeText(this, "Saat aranıyor (Durdurmak için tekrar basın)", Toast.LENGTH_SHORT).show()
+            } else {
+                binding.btnFindDevice.text = getString(R.string.action_find_device)
+                binding.btnFindDevice.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+                Toast.makeText(this, "Arama durduruldu", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.btnSyncHealth.setOnClickListener {
@@ -148,6 +158,9 @@ class MainActivity : AppCompatActivity() {
                     bleManager.connectionState.collect { state ->
                         when (state) {
                             ConnectionState.DISCONNECTED -> {
+                                isFindingDevice = false
+                                binding.btnFindDevice.text = getString(R.string.action_find_device)
+                                binding.btnFindDevice.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text_primary))
                                 binding.tvConnectionStatus.text = getString(R.string.status_disconnected)
                                 binding.tvConnectionStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_red))
                                 binding.cardConnectedDevice.visibility = View.GONE
