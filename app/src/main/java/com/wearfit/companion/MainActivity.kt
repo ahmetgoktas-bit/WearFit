@@ -96,6 +96,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnDisconnect.setOnClickListener {
             bleManager.disconnect()
+            binding.cardConnectedDevice.visibility = View.GONE
+            binding.tvConnectionStatus.text = getString(R.string.status_disconnected)
+            binding.tvConnectionStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_red))
+            Toast.makeText(this, "Bağlantı kesildi", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnSyncTime.setOnClickListener {

@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.wearfit.companion.model.WatchData
 import kotlinx.coroutines.*
@@ -81,10 +83,15 @@ class BleManager private constructor(private val context: Context) {
                     }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    Log.i(TAG, "Disconnected from watch")
+                    Log.i(TAG, "Disconnected from watch callback")
                     _connectionState.value = ConnectionState.DISCONNECTED
                     _watchData.value = _watchData.value.copy(isConnected = false)
-                    cleanUp()
+                    try {
+                        gatt?.close()
+                    } catch (_: Exception) {}
+                    if (bluetoothGatt == gatt) {
+                        cleanUp()
+                    }
                 }
             }
         }
@@ -289,8 +296,68 @@ class BleManager private constructor(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun disconnect() {
-        bluetoothGatt?.disconnect()
-        cleanUp()
+        Log.i(TAG, "Explicit disconnect requested")
+        val gatt = bluetoothGatt ?: run {
+            _connectionState.value = ConnectionState.DISCONNECTED
+            _watchData.value = WatchData(isConnected = false)
+            return
+        }
+
+        // 1. Send disconnect notification packet to watch (0xA1)
+        try {
+            val disconnectPacket = byteArrayOf(
+                WearfitProtocol.HEADER,
+                0x00,
+                0x04,
+                WearfitProtocol.DELIMITER,
+                0xA1.toByte(), // CMD_DISCONNECT
+                0x80.toByte(),
+                0x00
+            )
+            sendCommand(disconnectPacket)
+        } catch (_: Exception) {}
+
+        // 2. Disable notifications so watch stops streaming
+        notifyCharacteristic?.let { char ->
+            try {
+                gatt.setCharacteristicNotification(char, false)
+                val descriptor = char.getDescriptor(CCCD_UUID)
+                descriptor?.let { desc ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        gatt.writeDescriptor(desc, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        desc.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                        @Suppress("DEPRECATION")
+                        gatt.writeDescriptor(desc)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        // 3. Immediately set state to DISCONNECTED so UI responds
+        _connectionState.value = ConnectionState.DISCONNECTED
+        _watchData.value = WatchData(isConnected = false)
+
+        bluetoothGatt = null
+        writeCharacteristic = null
+        notifyCharacteristic = null
+
+        // 4. Perform disconnect and close on Main UI Looper
+        Handler(Looper.getMainLooper()).post {
+            try {
+                gatt.disconnect()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error disconnecting gatt: ${e.message}")
+            }
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    gatt.close()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error closing gatt: ${e.message}")
+                }
+            }, 300)
+        }
     }
 
     private fun cleanUp() {
