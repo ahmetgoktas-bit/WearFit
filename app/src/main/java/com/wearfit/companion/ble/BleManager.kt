@@ -346,7 +346,17 @@ class BleManager private constructor(private val context: Context) {
     }
 
     fun findDevice(enable: Boolean = true) {
-        sendCommand(WearfitProtocol.buildFindDeviceCommand(enable))
+        if (enable) {
+            sendCommand(WearfitProtocol.buildFindDeviceCommand(true))
+        } else {
+            val stopCommands = WearfitProtocol.buildFindDeviceStopCommands()
+            scope.launch {
+                for (cmd in stopCommands) {
+                    sendCommand(cmd)
+                    delay(80)
+                }
+            }
+        }
     }
 
     fun sendNotification(appId: Byte, text: String) {
