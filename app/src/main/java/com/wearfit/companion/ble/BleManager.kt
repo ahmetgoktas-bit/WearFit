@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.wearfit.companion.model.WatchData
+import com.wearfit.companion.service.WearfitForegroundService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +53,11 @@ class BleManager private constructor(private val context: Context) {
     private var writeCharacteristic: BluetoothGattCharacteristic? = null
     private var notifyCharacteristic: BluetoothGattCharacteristic? = null
 
+    private var lastConnectedAddress: String? = "C9:01:00:08:5C:A5"
+    private var isExplicitDisconnect = false
+    private var keepAliveJob: Job? = null
+    private var reconnectJob: Job? = null
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
@@ -86,14 +92,19 @@ class BleManager private constructor(private val context: Context) {
                     }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    Log.i(TAG, "Disconnected from watch callback")
-                    _connectionState.value = ConnectionState.DISCONNECTED
-                    _watchData.value = _watchData.value.copy(isConnected = false)
+                    Log.i(TAG, "Disconnected from watch callback (status=$status, gatt=$gatt, active=$bluetoothGatt)")
+                    stopKeepAlive()
                     try {
                         gatt?.close()
                     } catch (_: Exception) {}
-                    if (bluetoothGatt == gatt) {
+                    if (bluetoothGatt == null || bluetoothGatt == gatt) {
+                        _connectionState.value = ConnectionState.DISCONNECTED
+                        _watchData.value = _watchData.value.copy(isConnected = false)
                         cleanUp()
+                        if (!isExplicitDisconnect) {
+                            Log.i(TAG, "Unexpected disconnect (status=$status). Triggering auto-reconnect...")
+                            scheduleAutoReconnect()
+                        }
                     }
                 }
             }
@@ -206,14 +217,23 @@ class BleManager private constructor(private val context: Context) {
 
             _connectionState.value = ConnectionState.CONNECTED
             Log.i(TAG, "Services discovered. Connected & Ready.")
+            reconnectJob?.cancel()
+
+            // Request balanced priority to ensure BLE link stability
+            try {
+                gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED)
+            } catch (_: Exception) {}
+
+            WearfitForegroundService.start(context)
+            startKeepAlive()
 
             // Send handshake and sync commands after a short stabilization delay
             scope.launch {
-                delay(800)
+                delay(600)
                 syncTime()
-                delay(400)
+                delay(300)
                 queryBattery()
-                delay(400)
+                delay(300)
                 queryHealth()
                 startPeriodicHealthSync()
             }
@@ -298,77 +318,124 @@ class BleManager private constructor(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun connect(device: BluetoothDevice) {
-        disconnect()
-        _connectionState.value = ConnectionState.CONNECTING
-        bluetoothGatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
-    }
+        isExplicitDisconnect = false
+        lastConnectedAddress = device.address
 
-    @SuppressLint("MissingPermission")
-    fun disconnect() {
-        Log.i(TAG, "Explicit disconnect requested")
-        stopPeriodicHealthSync()
-        stopHeartRateMeasurement()
-        WearfitProtocol.resetTimestamps()
-        val gatt = bluetoothGatt ?: run {
-            _connectionState.value = ConnectionState.DISCONNECTED
-            _watchData.value = WatchData(isConnected = false)
-            return
+        val currentGatt = bluetoothGatt
+        val currentState = _connectionState.value
+        if (currentGatt?.device?.address.equals(device.address, ignoreCase = true)) {
+            if (currentState == ConnectionState.CONNECTED) {
+                Log.i(TAG, "Already connected to ${device.address}")
+                return
+            }
+            if (currentState == ConnectionState.CONNECTING) {
+                Log.i(TAG, "Already connecting to ${device.address}")
+                return
+            }
         }
 
-        // 1. Send disconnect notification packet to watch (0xA1)
+        // Clean up previous gatt cleanly without sending CMD_DISCONNECT packet to watch
         try {
-            val disconnectPacket = byteArrayOf(
-                WearfitProtocol.HEADER,
-                0x00,
-                0x04,
-                WearfitProtocol.DELIMITER,
-                0xA1.toByte(), // CMD_DISCONNECT
-                0x80.toByte(),
-                0x00
-            )
-            sendCommand(disconnectPacket)
+            currentGatt?.disconnect()
+            currentGatt?.close()
         } catch (_: Exception) {}
-
-        // 2. Disable notifications so watch stops streaming
-        notifyCharacteristic?.let { char ->
-            try {
-                gatt.setCharacteristicNotification(char, false)
-                val descriptor = char.getDescriptor(CCCD_UUID)
-                descriptor?.let { desc ->
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        gatt.writeDescriptor(desc, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        desc.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-                        @Suppress("DEPRECATION")
-                        gatt.writeDescriptor(desc)
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-
-        // 3. Immediately set state to DISCONNECTED so UI responds
-        _connectionState.value = ConnectionState.DISCONNECTED
-        _watchData.value = WatchData(isConnected = false)
-
         bluetoothGatt = null
         writeCharacteristic = null
         notifyCharacteristic = null
 
-        // 4. Perform disconnect and close on Main UI Looper
-        Handler(Looper.getMainLooper()).post {
+        _connectionState.value = ConnectionState.CONNECTING
+        Log.i(TAG, "Connecting to ${device.name ?: "Unknown"} (${device.address})...")
+        bluetoothGatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun connectAddress(address: String): Boolean {
+        isExplicitDisconnect = false
+        lastConnectedAddress = address
+
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager ?: return false
+        val adapter = bluetoothManager.adapter ?: return false
+        if (!adapter.isEnabled) return false
+        return try {
+            val device = adapter.getRemoteDevice(address)
+            connect(device)
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error connecting to address $address: ${e.message}")
+            false
+        }
+    }
+
+    private var isDisconnecting = false
+
+    @SuppressLint("MissingPermission")
+    fun disconnect() {
+        if (isDisconnecting) return
+        isDisconnecting = true
+        isExplicitDisconnect = true
+        reconnectJob?.cancel()
+        stopKeepAlive()
+        try {
+            Log.i(TAG, "Explicit user disconnect requested")
+            WearfitForegroundService.stop(context)
+            stopPeriodicHealthSync()
+            stopHeartRateMeasurement()
+            WearfitProtocol.resetTimestamps()
+            val gatt = bluetoothGatt ?: run {
+                _connectionState.value = ConnectionState.DISCONNECTED
+                _watchData.value = WatchData(isConnected = false)
+                return
+            }
+
+            // 1. Send disconnect notification packet to watch (0xA1)
+            try {
+                val disconnectPacket = byteArrayOf(
+                    WearfitProtocol.HEADER,
+                    0x00,
+                    0x04,
+                    WearfitProtocol.DELIMITER,
+                    0xA1.toByte(), // CMD_DISCONNECT
+                    0x80.toByte(),
+                    0x00
+                )
+                sendCommand(disconnectPacket)
+            } catch (_: Exception) {}
+
+            // 2. Disable notifications so watch stops streaming
+            notifyCharacteristic?.let { char ->
+                try {
+                    gatt.setCharacteristicNotification(char, false)
+                    val descriptor = char.getDescriptor(CCCD_UUID)
+                    descriptor?.let { desc ->
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            gatt.writeDescriptor(desc, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            desc.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                            @Suppress("DEPRECATION")
+                            gatt.writeDescriptor(desc)
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            // 3. Immediately set state to DISCONNECTED so UI responds
+            _connectionState.value = ConnectionState.DISCONNECTED
+            _watchData.value = WatchData(isConnected = false)
+
+            bluetoothGatt = null
+            writeCharacteristic = null
+            notifyCharacteristic = null
+
+            // 4. Disconnect and close GATT synchronously
             try {
                 gatt.disconnect()
+                gatt.close()
             } catch (e: Exception) {
-                Log.e(TAG, "Error disconnecting gatt: ${e.message}")
+                Log.e(TAG, "Error disconnecting/closing gatt: ${e.message}")
             }
-            Handler(Looper.getMainLooper()).postDelayed({
-                try {
-                    gatt.close()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error closing gatt: ${e.message}")
-                }
-            }, 300)
+        } finally {
+            isDisconnecting = false
         }
     }
 
@@ -412,8 +479,60 @@ class BleManager private constructor(private val context: Context) {
         sendCommand(WearfitProtocol.buildTimeSyncCommand())
     }
 
-    fun queryBattery() {
-        sendCommand(WearfitProtocol.buildBatteryQueryCommand())
+    fun queryBattery(): Boolean {
+        return sendCommand(WearfitProtocol.buildBatteryQueryCommand())
+    }
+
+    private fun startKeepAlive() {
+        keepAliveJob?.cancel()
+        keepAliveJob = scope.launch {
+            Log.i(TAG, "Starting BLE keep-alive heartbeat loop (every 20s)")
+            while (isActive && _connectionState.value == ConnectionState.CONNECTED) {
+                delay(20_000L) // Ping every 20s to prevent HCI Supervision Timeout (status=8)
+                if (_connectionState.value == ConnectionState.CONNECTED) {
+                    val sent = queryBattery()
+                    if (!sent) {
+                        Log.w(TAG, "Keep-alive ping could not be sent")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun stopKeepAlive() {
+        keepAliveJob?.cancel()
+        keepAliveJob = null
+    }
+
+    fun scheduleAutoReconnect() {
+        if (isExplicitDisconnect) return
+        reconnectJob?.cancel()
+        reconnectJob = scope.launch {
+            Log.i(TAG, "Auto-reconnect scheduler active")
+            var retryDelayMs = 2000L
+            while (isActive && _connectionState.value != ConnectionState.CONNECTED && !isExplicitDisconnect) {
+                delay(retryDelayMs)
+                if (_connectionState.value == ConnectionState.CONNECTED || isExplicitDisconnect) break
+
+                val targetAddress = lastConnectedAddress ?: "C9:01:00:08:5C:A5"
+                Log.i(TAG, "Auto-reconnecting to $targetAddress (delay: ${retryDelayMs}ms)...")
+                val initiated = connectAddress(targetAddress)
+                if (initiated) {
+                    var waited = 0L
+                    while (waited < 8000L && _connectionState.value != ConnectionState.CONNECTED && !isExplicitDisconnect) {
+                        delay(500L)
+                        waited += 500L
+                    }
+                }
+                retryDelayMs = (retryDelayMs * 1.5).toLong().coerceAtMost(12000L)
+            }
+        }
+    }
+
+    fun connectSavedWatch(): Boolean {
+        isExplicitDisconnect = false
+        val address = lastConnectedAddress ?: "C9:01:00:08:5C:A5"
+        return connectAddress(address)
     }
 
     fun queryHealth() {

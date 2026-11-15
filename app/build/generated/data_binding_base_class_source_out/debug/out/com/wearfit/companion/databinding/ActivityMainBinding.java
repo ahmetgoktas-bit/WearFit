@@ -30,7 +30,13 @@ public final class ActivityMainBinding implements ViewBinding {
   public final MaterialButton btnFindDevice;
 
   @NonNull
+  public final MaterialButton btnGrantBatteryOptimization;
+
+  @NonNull
   public final MaterialButton btnGrantNotificationAccess;
+
+  @NonNull
+  public final MaterialButton btnQuickConnect;
 
   @NonNull
   public final MaterialButton btnScan;
@@ -45,10 +51,16 @@ public final class ActivityMainBinding implements ViewBinding {
   public final MaterialButton btnTestNotification;
 
   @NonNull
+  public final MaterialCardView cardBatteryOptimization;
+
+  @NonNull
   public final MaterialCardView cardConnectedDevice;
 
   @NonNull
   public final MaterialCardView cardNotificationPermission;
+
+  @NonNull
+  public final MaterialCardView cardSavedWatch;
 
   @NonNull
   public final ProgressBar progressScan;
@@ -91,10 +103,14 @@ public final class ActivityMainBinding implements ViewBinding {
 
   private ActivityMainBinding(@NonNull CoordinatorLayout rootView,
       @NonNull MaterialButton btnDisconnect, @NonNull MaterialButton btnFindDevice,
-      @NonNull MaterialButton btnGrantNotificationAccess, @NonNull MaterialButton btnScan,
-      @NonNull MaterialButton btnSyncHealth, @NonNull MaterialButton btnSyncTime,
-      @NonNull MaterialButton btnTestNotification, @NonNull MaterialCardView cardConnectedDevice,
-      @NonNull MaterialCardView cardNotificationPermission, @NonNull ProgressBar progressScan,
+      @NonNull MaterialButton btnGrantBatteryOptimization,
+      @NonNull MaterialButton btnGrantNotificationAccess, @NonNull MaterialButton btnQuickConnect,
+      @NonNull MaterialButton btnScan, @NonNull MaterialButton btnSyncHealth,
+      @NonNull MaterialButton btnSyncTime, @NonNull MaterialButton btnTestNotification,
+      @NonNull MaterialCardView cardBatteryOptimization,
+      @NonNull MaterialCardView cardConnectedDevice,
+      @NonNull MaterialCardView cardNotificationPermission,
+      @NonNull MaterialCardView cardSavedWatch, @NonNull ProgressBar progressScan,
       @NonNull RecyclerView rvDevices, @NonNull TextView tvBattery,
       @NonNull TextView tvBloodPressure, @NonNull TextView tvCalories,
       @NonNull TextView tvConnectedDeviceAddress, @NonNull TextView tvConnectedDeviceName,
@@ -104,13 +120,17 @@ public final class ActivityMainBinding implements ViewBinding {
     this.rootView = rootView;
     this.btnDisconnect = btnDisconnect;
     this.btnFindDevice = btnFindDevice;
+    this.btnGrantBatteryOptimization = btnGrantBatteryOptimization;
     this.btnGrantNotificationAccess = btnGrantNotificationAccess;
+    this.btnQuickConnect = btnQuickConnect;
     this.btnScan = btnScan;
     this.btnSyncHealth = btnSyncHealth;
     this.btnSyncTime = btnSyncTime;
     this.btnTestNotification = btnTestNotification;
+    this.cardBatteryOptimization = cardBatteryOptimization;
     this.cardConnectedDevice = cardConnectedDevice;
     this.cardNotificationPermission = cardNotificationPermission;
+    this.cardSavedWatch = cardSavedWatch;
     this.progressScan = progressScan;
     this.rvDevices = rvDevices;
     this.tvBattery = tvBattery;
@@ -165,9 +185,21 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnGrantBatteryOptimization;
+      MaterialButton btnGrantBatteryOptimization = ViewBindings.findChildViewById(rootView, id);
+      if (btnGrantBatteryOptimization == null) {
+        break missingId;
+      }
+
       id = R.id.btnGrantNotificationAccess;
       MaterialButton btnGrantNotificationAccess = ViewBindings.findChildViewById(rootView, id);
       if (btnGrantNotificationAccess == null) {
+        break missingId;
+      }
+
+      id = R.id.btnQuickConnect;
+      MaterialButton btnQuickConnect = ViewBindings.findChildViewById(rootView, id);
+      if (btnQuickConnect == null) {
         break missingId;
       }
 
@@ -195,6 +227,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.cardBatteryOptimization;
+      MaterialCardView cardBatteryOptimization = ViewBindings.findChildViewById(rootView, id);
+      if (cardBatteryOptimization == null) {
+        break missingId;
+      }
+
       id = R.id.cardConnectedDevice;
       MaterialCardView cardConnectedDevice = ViewBindings.findChildViewById(rootView, id);
       if (cardConnectedDevice == null) {
@@ -204,6 +242,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.cardNotificationPermission;
       MaterialCardView cardNotificationPermission = ViewBindings.findChildViewById(rootView, id);
       if (cardNotificationPermission == null) {
+        break missingId;
+      }
+
+      id = R.id.cardSavedWatch;
+      MaterialCardView cardSavedWatch = ViewBindings.findChildViewById(rootView, id);
+      if (cardSavedWatch == null) {
         break missingId;
       }
 
@@ -286,9 +330,10 @@ public final class ActivityMainBinding implements ViewBinding {
       }
 
       return new ActivityMainBinding((CoordinatorLayout) rootView, btnDisconnect, btnFindDevice,
-          btnGrantNotificationAccess, btnScan, btnSyncHealth, btnSyncTime, btnTestNotification,
-          cardConnectedDevice, cardNotificationPermission, progressScan, rvDevices, tvBattery,
-          tvBloodPressure, tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName,
+          btnGrantBatteryOptimization, btnGrantNotificationAccess, btnQuickConnect, btnScan,
+          btnSyncHealth, btnSyncTime, btnTestNotification, cardBatteryOptimization,
+          cardConnectedDevice, cardNotificationPermission, cardSavedWatch, progressScan, rvDevices,
+          tvBattery, tvBloodPressure, tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName,
           tvConnectionStatus, tvEmptyDevices, tvHeartRate, tvLastHealthSync, tvSpO2, tvSteps);
     }
     String missingId = rootView.getResources().getResourceName(id);

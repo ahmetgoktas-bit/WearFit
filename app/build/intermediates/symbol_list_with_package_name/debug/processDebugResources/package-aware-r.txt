@@ -3112,15 +3112,19 @@ id bounce
 id btnConnect
 id btnDisconnect
 id btnFindDevice
+id btnGrantBatteryOptimization
 id btnGrantNotificationAccess
+id btnQuickConnect
 id btnScan
 id btnSyncHealth
 id btnSyncTime
 id btnTestNotification
 id buttonPanel
 id cancel_button
+id cardBatteryOptimization
 id cardConnectedDevice
 id cardNotificationPermission
+id cardSavedWatch
 id center
 id centerCrop
 id centerInside
@@ -3742,6 +3746,7 @@ string bottomsheet_drag_handle_clicked
 string bottomsheet_drag_handle_content_description
 string btn_cancel
 string btn_disconnect
+string btn_grant_battery_optimization
 string btn_grant_notification_access
 string btn_grant_permission
 string btn_scan
@@ -3765,6 +3770,9 @@ string error_icon_content_description
 string exposed_dropdown_menu_content_description
 string fab_transformation_scrim_behavior
 string fab_transformation_sheet_behavior
+string foreground_service_action_stop
+string foreground_service_connected
+string foreground_service_title
 string hide_bottom_view_on_scroll_behavior
 string hint_notification_text
 string hint_notification_title
@@ -3882,6 +3890,7 @@ string path_password_eye
 string path_password_eye_mask_strike_through
 string path_password_eye_mask_visible
 string path_password_strike_through
+string permission_battery_optimization
 string permission_bluetooth_required
 string permission_notification_access
 string search_menu_title

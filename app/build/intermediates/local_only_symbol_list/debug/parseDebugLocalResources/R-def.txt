@@ -18,13 +18,17 @@ drawable ic_launcher
 id btnConnect
 id btnDisconnect
 id btnFindDevice
+id btnGrantBatteryOptimization
 id btnGrantNotificationAccess
+id btnQuickConnect
 id btnScan
 id btnSyncHealth
 id btnSyncTime
 id btnTestNotification
+id cardBatteryOptimization
 id cardConnectedDevice
 id cardNotificationPermission
+id cardSavedWatch
 id etMessage
 id etTitle
 id progressScan
@@ -54,6 +58,7 @@ string app_name
 string battery_level
 string btn_cancel
 string btn_disconnect
+string btn_grant_battery_optimization
 string btn_grant_notification_access
 string btn_grant_permission
 string btn_scan
@@ -61,6 +66,9 @@ string btn_send
 string btn_stop_scan
 string connected_device
 string dialog_test_title
+string foreground_service_action_stop
+string foreground_service_connected
+string foreground_service_title
 string hint_notification_text
 string hint_notification_title
 string label_blood_pressure
@@ -70,6 +78,7 @@ string label_spo2
 string label_steps
 string no_device_connected
 string notification_service_label
+string permission_battery_optimization
 string permission_bluetooth_required
 string permission_notification_access
 string status_connected

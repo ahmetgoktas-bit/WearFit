@@ -21,6 +21,7 @@
     <string name="battery_level">Pil: %1$d%%</string>
     <string name="btn_cancel">İptal</string>
     <string name="btn_disconnect">Bağlantıyı Kes</string>
+    <string name="btn_grant_battery_optimization">Pil Kısıtlamasını Kaldır</string>
     <string name="btn_grant_notification_access">Bildirim İznini Aç</string>
     <string name="btn_grant_permission">İzin Ver</string>
     <string name="btn_scan">Cihaz Ara</string>
@@ -28,6 +29,9 @@
     <string name="btn_stop_scan">Aramayı Durdur</string>
     <string name="connected_device">Bağlı Cihaz</string>
     <string name="dialog_test_title">Test Bildirimi</string>
+    <string name="foreground_service_action_stop">Durdur</string>
+    <string name="foreground_service_connected">Saat bağlı - Arka planda çalışıyor</string>
+    <string name="foreground_service_title">WearFit Companion</string>
     <string name="hint_notification_text">Mesaj (örn: Selam, neredesin?)</string>
     <string name="hint_notification_title">Başlık (örn: WhatsApp - Ahmet)</string>
     <string name="label_blood_pressure">Tansiyon (mmHg)</string>
@@ -37,6 +41,7 @@
     <string name="label_steps">Adım</string>
     <string name="no_device_connected">Bağlı bir akıllı saat bulunmuyor.</string>
     <string name="notification_service_label">WearFit Bildirim İletici Servisi</string>
+    <string name="permission_battery_optimization">Arka planda kesintisiz çalışabilmesi ve 5 dakikada bir ölçümlerin aksamaması için pil kısıtlamasını kaldırın.</string>
     <string name="permission_bluetooth_required">Akıllı saat ile haberleşmek için Bluetooth izinleri gereklidir.</string>
     <string name="permission_notification_access">Saat üzerinden WhatsApp ve bildirimleri görebilmek için Bildirim Erişimi iznini açın.</string>
     <string name="status_connected">Bağlandı</string>

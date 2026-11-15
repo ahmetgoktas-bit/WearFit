@@ -6,6 +6,7 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.util.Log
 import com.wearfit.companion.model.BleDeviceItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,9 +25,22 @@ class BleScanner(private val bluetoothAdapter: BluetoothAdapter?) {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             result ?: return
             val device = result.device
-            val name = device.name ?: result.scanRecord?.deviceName ?: return
+            val rawName = device.name ?: result.scanRecord?.deviceName
+            val isTargetWatch = device.address.equals("C9:01:00:08:5C:A5", ignoreCase = true) ||
+                    device.address.startsWith("C9:01", ignoreCase = true) ||
+                    rawName?.contains("HK10", ignoreCase = true) == true ||
+                    rawName?.contains("Wear", ignoreCase = true) == true ||
+                    rawName?.contains("Watch", ignoreCase = true) == true
 
-            // Filter out empty name devices or non-connectable beacons
+            val name = when {
+                isTargetWatch && (rawName.isNullOrBlank() || rawName.contains("Watch", ignoreCase = true)) -> "HK10 ULTRA 3 MAX"
+                !rawName.isNullOrBlank() -> rawName
+                isTargetWatch -> "HK10 ULTRA 3 MAX"
+                else -> "BLE Cihaz (${device.address})"
+            }
+
+            Log.d("BleScanner", "Discovered device: $name (${device.address}) RSSI=${result.rssi}")
+
             val currentList = _scannedDevices.value.toMutableList()
             val existingIndex = currentList.indexOfFirst { it.address == device.address }
 
@@ -40,12 +54,17 @@ class BleScanner(private val bluetoothAdapter: BluetoothAdapter?) {
             if (existingIndex >= 0) {
                 currentList[existingIndex] = item
             } else {
-                currentList.add(item)
+                if (isTargetWatch) {
+                    currentList.add(0, item)
+                } else {
+                    currentList.add(item)
+                }
             }
             _scannedDevices.value = currentList
         }
 
         override fun onScanFailed(errorCode: Int) {
+            Log.e("BleScanner", "BLE Scan failed with errorCode: $errorCode")
             isScanning = false
         }
     }

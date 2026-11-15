@@ -32,8 +32,15 @@
     <!-- Permissions -->
     <string name="permission_bluetooth_required">Akıllı saat ile haberleşmek için Bluetooth izinleri gereklidir.</string>
     <string name="permission_notification_access">Saat üzerinden WhatsApp ve bildirimleri görebilmek için Bildirim Erişimi iznini açın.</string>
+    <string name="permission_battery_optimization">Arka planda kesintisiz çalışabilmesi ve 5 dakikada bir ölçümlerin aksamaması için pil kısıtlamasını kaldırın.</string>
     <string name="btn_grant_permission">İzin Ver</string>
     <string name="btn_grant_notification_access">Bildirim İznini Aç</string>
+    <string name="btn_grant_battery_optimization">Pil Kısıtlamasını Kaldır</string>
+
+    <!-- Foreground Service -->
+    <string name="foreground_service_title">WearFit Companion</string>
+    <string name="foreground_service_connected">Saat bağlı - Arka planda çalışıyor</string>
+    <string name="foreground_service_action_stop">Durdur</string>
 
     <!-- Dialogs -->
     <string name="dialog_test_title">Test Bildirimi</string>

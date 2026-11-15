@@ -1,6 +1,7 @@
 package com.wearfit.companion
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -9,6 +10,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
@@ -22,6 +24,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.wearfit.companion.ble.BleManager
 import com.wearfit.companion.ble.BleScanner
@@ -66,11 +69,24 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupListeners()
         observeState()
+
+        // Check & request background execution / battery optimization exemption
+        requestBatteryOptimizationExemption(showDialogFirst = true)
+
+        // Auto-connect to saved watch if Bluetooth is active and permissions are granted
+        if (bleManager.connectionState.value == ConnectionState.DISCONNECTED && bluetoothAdapter?.isEnabled == true) {
+            val hasBtPerm = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+            if (hasBtPerm) {
+                bleManager.connectAddress("C9:01:00:08:5C:A5")
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         checkNotificationListenerPermission()
+        updateBatteryOptimizationCard()
     }
 
     private fun setupRecyclerView() {
@@ -138,6 +154,58 @@ class MainActivity : AppCompatActivity() {
                 openAppDetailsSettings()
             }
         }
+
+        binding.btnGrantBatteryOptimization.setOnClickListener {
+            launchBatteryOptimizationIntent()
+        }
+
+        binding.btnQuickConnect.setOnClickListener {
+            val address = "C9:01:00:08:5C:A5"
+            Toast.makeText(this, "HK10 ULTRA 3 MAX saatine doğrudan bağlanılıyor...", Toast.LENGTH_SHORT).show()
+            bleManager.connectAddress(address)
+        }
+    }
+
+    private fun checkBatteryOptimizationStatus(): Boolean {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true
+        return powerManager.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    private fun updateBatteryOptimizationCard() {
+        val isExempt = checkBatteryOptimizationStatus()
+        binding.cardBatteryOptimization.visibility = if (isExempt) View.GONE else View.VISIBLE
+    }
+
+    private fun requestBatteryOptimizationExemption(showDialogFirst: Boolean = false) {
+        if (checkBatteryOptimizationStatus()) return
+
+        if (showDialogFirst) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Arka Planda Kesintisiz Çalışma")
+                .setMessage("Uygulamanın ekran kapalıyken veya arka plandayken saatle bağlantısının kopmaması, WhatsApp bildirimlerini iletmesi ve 5 dakikalık sağlık ölçümlerinin aksamaması için pil kısıtlamasından muaf tutulması gerekir.\n\nLütfen açılan sistem penceresinde 'İzin Ver' seçeneğini onaylayın.")
+                .setPositiveButton("İzin Ver") { _, _ ->
+                    launchBatteryOptimizationIntent()
+                }
+                .setNegativeButton("Daha Sonra", null)
+                .show()
+        } else {
+            launchBatteryOptimizationIntent()
+        }
+    }
+
+    @SuppressLint("BatteryLife")
+    private fun launchBatteryOptimizationIntent() {
+        try {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(fallback)
+            } catch (_: Exception) {}
+        }
     }
 
     private fun openAppDetailsSettings() {
@@ -167,16 +235,19 @@ class MainActivity : AppCompatActivity() {
                                 binding.tvConnectionStatus.text = getString(R.string.status_disconnected)
                                 binding.tvConnectionStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_red))
                                 binding.cardConnectedDevice.visibility = View.GONE
+                                binding.cardSavedWatch.visibility = View.VISIBLE
                             }
                             ConnectionState.CONNECTING -> {
                                 binding.tvConnectionStatus.text = getString(R.string.status_connecting)
                                 binding.tvConnectionStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_orange))
                                 binding.cardConnectedDevice.visibility = View.GONE
+                                binding.cardSavedWatch.visibility = View.VISIBLE
                             }
                             ConnectionState.CONNECTED -> {
                                 binding.tvConnectionStatus.text = getString(R.string.status_connected)
                                 binding.tvConnectionStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_green))
                                 binding.cardConnectedDevice.visibility = View.VISIBLE
+                                binding.cardSavedWatch.visibility = View.GONE
                             }
                         }
                     }
