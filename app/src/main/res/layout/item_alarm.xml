@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
+    android:background="@drawable/bg_contact_item"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="10dp">
+
+    <!-- Clock Icon -->
+    <TextView
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/circle_index_bg"
+        android:gravity="center"
+        android:text="⏰"
+        android:textSize="13sp" />
+
+    <!-- Time & Repeat details -->
+    <LinearLayout
+        android:id="@+id/layoutAlarmText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvAlarmTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="07:30"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvAlarmRepeat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Her Gün"
+            android:textColor="@color/primary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Switch toggle -->
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switchAlarm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="6dp" />
+
+    <!-- Delete button -->
+    <ImageButton
+        android:id="@+id/btnDeleteAlarm"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Sil"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        app:tint="@color/accent_red" />
+
+</LinearLayout>

@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.app.Activity
+import android.app.TimePickerDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -42,6 +43,7 @@ import com.wearfit.companion.ble.ConnectionState
 import com.wearfit.companion.ble.WearfitProtocol
 import com.wearfit.companion.databinding.ActivityMainBinding
 import com.wearfit.companion.ui.DeviceAdapter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -79,6 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val contactList = mutableListOf<WearfitProtocol.ContactItem>()
+    private val alarmList = mutableListOf<WearfitProtocol.WatchAlarm>()
 
     private val pickContactLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -111,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         setupListeners()
         setupVolumeControl()
         setupContactsSection()
+        setupAlarmsSection()
         observeState()
 
         // Check & request background execution / battery optimization exemption
@@ -308,8 +312,28 @@ class MainActivity : AppCompatActivity() {
                                 binding.tvConnectionStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_green))
                                 binding.cardConnectedDevice.visibility = View.VISIBLE
                                 binding.cardSavedWatch.visibility = View.GONE
+                                bleManager.queryAlarms()
                             }
                         }
+                    }
+                }
+
+                launch {
+                    bleManager.watchAlarms.collect { incomingAlarm ->
+                        Log.i("MainActivity", "Received alarm from watch: [${incomingAlarm.id}] ${incomingAlarm.hour}:${incomingAlarm.minute} enabled=${incomingAlarm.isEnabled}")
+                        val existing = alarmList.find { it.id == incomingAlarm.id }
+                        if (existing != null) {
+                            existing.hour = incomingAlarm.hour
+                            existing.minute = incomingAlarm.minute
+                            existing.isEnabled = incomingAlarm.isEnabled
+                            existing.repeat = incomingAlarm.repeat
+                        } else {
+                            if (incomingAlarm.isEnabled || incomingAlarm.hour != 0 || incomingAlarm.minute != 0) {
+                                alarmList.add(incomingAlarm)
+                            }
+                        }
+                        saveAlarmsToPrefs()
+                        updateAlarmsUi()
                     }
                 }
 
@@ -729,6 +753,214 @@ class MainActivity : AppCompatActivity() {
             }
 
             binding.layoutContactList.addView(itemView)
+        }
+    }
+
+    private fun setupAlarmsSection() {
+        loadAlarmsFromPrefs()
+        updateAlarmsUi()
+
+        binding.btnAddAlarm.setOnClickListener {
+            if (alarmList.size >= 8) {
+                Toast.makeText(this, "En fazla 8 alarm kurulabilir", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            showTimePickerForAlarm()
+        }
+
+        binding.btnFetchAlarms.setOnClickListener {
+            if (!bleManager.isDeviceConnected()) {
+                Toast.makeText(this, "Saat bağlı değil! Önce BLE bağlantısını kurun.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val countBefore = alarmList.size
+            bleManager.queryAlarms()
+            Toast.makeText(this, "Saatteki alarmlar sorgulanıyor...", Toast.LENGTH_SHORT).show()
+            lifecycleScope.launch {
+                delay(2500)
+                if (alarmList.size == countBefore) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "ℹ️ Saatiniz alarm listesini telefona geri aktarmadı.\nWearfit saatlerde alarmlar uygulamadan 'Yeni Alarm' ile kurulup saate gönderilir.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun showTimePickerForAlarm(existingAlarm: WearfitProtocol.WatchAlarm? = null) {
+        val initialHour = existingAlarm?.hour ?: 7
+        val initialMinute = existingAlarm?.minute ?: 0
+
+        val timePicker = TimePickerDialog(
+            this,
+            { _, hourOfDay, minute ->
+                showRepeatSelectorDialog(hourOfDay, minute, existingAlarm)
+            },
+            initialHour,
+            initialMinute,
+            true
+        )
+        timePicker.setTitle(if (existingAlarm != null) "Alarmı Düzenle" else "Yeni Alarm Saati")
+        timePicker.show()
+    }
+
+    private fun showRepeatSelectorDialog(
+        hour: Int,
+        minute: Int,
+        existingAlarm: WearfitProtocol.WatchAlarm? = null
+    ) {
+        val options = arrayOf(
+            "Her Gün",
+            "Hafta İçi (Pazartesi - Cuma)",
+            "Hafta Sonu (Cumartesi - Pazar)",
+            "Bir Kez"
+        )
+        val repeatEnums = arrayOf(
+            WearfitProtocol.AlarmRepeat.EVERY_DAY,
+            WearfitProtocol.AlarmRepeat.WEEKDAYS,
+            WearfitProtocol.AlarmRepeat.WEEKENDS,
+            WearfitProtocol.AlarmRepeat.ONCE
+        )
+
+        var selectedIndex = when (existingAlarm?.repeat) {
+            WearfitProtocol.AlarmRepeat.WEEKDAYS -> 1
+            WearfitProtocol.AlarmRepeat.WEEKENDS -> 2
+            WearfitProtocol.AlarmRepeat.ONCE -> 3
+            else -> 0
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(String.format("Alarm Tekrarı (%02d:%02d)", hour, minute))
+            .setSingleChoiceItems(options, selectedIndex) { _, which ->
+                selectedIndex = which
+            }
+            .setPositiveButton("Kaydet") { _, _ ->
+                val chosenRepeat = repeatEnums[selectedIndex]
+                val alarmToSave: WearfitProtocol.WatchAlarm
+                if (existingAlarm != null) {
+                    existingAlarm.hour = hour
+                    existingAlarm.minute = minute
+                    existingAlarm.repeat = chosenRepeat
+                    existingAlarm.isEnabled = true
+                    alarmToSave = existingAlarm
+                } else {
+                    val usedIds = alarmList.map { it.id }.toSet()
+                    val newId = (0..7).firstOrNull { it !in usedIds } ?: alarmList.size
+                    val newAlarm = WearfitProtocol.WatchAlarm(
+                        id = newId,
+                        hour = hour,
+                        minute = minute,
+                        isEnabled = true,
+                        repeat = chosenRepeat
+                    )
+                    alarmList.add(newAlarm)
+                    alarmToSave = newAlarm
+                }
+
+                saveAlarmsToPrefs()
+                updateAlarmsUi()
+
+                // Send to watch over BLE
+                if (bleManager.isDeviceConnected()) {
+                    bleManager.setAlarm(alarmToSave)
+                    Toast.makeText(
+                        this,
+                        String.format("⏰ Alarm saate kuruldu: %02d:%02d (%s)", hour, minute, chosenRepeat.label),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        String.format("Alarm kaydedildi: %02d:%02d. Saat bağlandığında saate iletilecek.", hour, minute),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+            .setNegativeButton("İptal", null)
+            .show()
+    }
+
+    private fun saveAlarmsToPrefs() {
+        val prefs = getSharedPreferences("wearfit_alarms", Context.MODE_PRIVATE)
+        val array = JSONArray()
+        for (a in alarmList) {
+            val obj = JSONObject()
+            obj.put("id", a.id)
+            obj.put("hour", a.hour)
+            obj.put("minute", a.minute)
+            obj.put("enabled", a.isEnabled)
+            obj.put("repeat", a.repeat.name)
+            array.put(obj)
+        }
+        prefs.edit().putString("saved_alarms", array.toString()).apply()
+    }
+
+    private fun loadAlarmsFromPrefs() {
+        alarmList.clear()
+        val prefs = getSharedPreferences("wearfit_alarms", Context.MODE_PRIVATE)
+        val jsonStr = prefs.getString("saved_alarms", null) ?: return
+        try {
+            val array = JSONArray(jsonStr)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val id = obj.getInt("id")
+                val hour = obj.getInt("hour")
+                val minute = obj.getInt("minute")
+                val enabled = obj.getBoolean("enabled")
+                val repeatName = obj.optString("repeat", "EVERY_DAY")
+                val repeat = try {
+                    WearfitProtocol.AlarmRepeat.valueOf(repeatName)
+                } catch (_: Exception) {
+                    WearfitProtocol.AlarmRepeat.EVERY_DAY
+                }
+                alarmList.add(WearfitProtocol.WatchAlarm(id, hour, minute, enabled, repeat))
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun updateAlarmsUi() {
+        binding.tvAlarmCount.text = "${alarmList.size}/8"
+        binding.tvEmptyAlarms.visibility = if (alarmList.isEmpty()) View.VISIBLE else View.GONE
+        binding.btnAddAlarm.isEnabled = alarmList.size < 8
+        binding.layoutAlarmList.removeAllViews()
+
+        for (i in alarmList.indices) {
+            val alarm = alarmList[i]
+            val itemView = layoutInflater.inflate(R.layout.item_alarm, binding.layoutAlarmList, false)
+
+            itemView.findViewById<TextView>(R.id.tvAlarmTime).text = String.format("%02d:%02d", alarm.hour, alarm.minute)
+            itemView.findViewById<TextView>(R.id.tvAlarmRepeat).text = alarm.repeat.label
+
+            val switchAlarm = itemView.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.switchAlarm)
+            switchAlarm.isChecked = alarm.isEnabled
+
+            switchAlarm.setOnCheckedChangeListener { _, isChecked ->
+                alarm.isEnabled = isChecked
+                saveAlarmsToPrefs()
+                if (bleManager.isDeviceConnected()) {
+                    bleManager.setAlarm(alarm)
+                    val statusText = if (isChecked) "açıldı" else "kapatıldı"
+                    Toast.makeText(this, String.format("Alarm %02d:%02d $statusText", alarm.hour, alarm.minute), Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            itemView.findViewById<View>(R.id.layoutAlarmText).setOnClickListener {
+                showTimePickerForAlarm(alarm)
+            }
+
+            itemView.findViewById<View>(R.id.btnDeleteAlarm).setOnClickListener {
+                if (bleManager.isDeviceConnected()) {
+                    bleManager.deleteAlarm(alarm.id)
+                }
+                alarmList.removeAt(i)
+                saveAlarmsToPrefs()
+                updateAlarmsUi()
+                Toast.makeText(this, "Alarm silindi", Toast.LENGTH_SHORT).show()
+            }
+
+            binding.layoutAlarmList.addView(itemView)
         }
     }
 

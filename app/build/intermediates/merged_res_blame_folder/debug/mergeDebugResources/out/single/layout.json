@@ -4,6 +4,10 @@
         "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\layout\\dialog_test_notification.xml"
     },
     {
+        "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-mergeDebugResources-3:\\layout\\item_alarm.xml",
+        "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\layout\\item_alarm.xml"
+    },
+    {
         "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-mergeDebugResources-3:\\layout\\item_device.xml",
         "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\layout\\item_device.xml"
     },
@@ -14,10 +18,6 @@
     {
         "merged": "com.wearfit.companion.app-mergeDebugResources-3:/layout/activity_main.xml",
         "source": "com.wearfit.companion.app-main-6:/layout/activity_main.xml"
-    },
-    {
-        "merged": "com.wearfit.companion.app-mergeDebugResources-3:/layout/item_contact.xml",
-        "source": "com.wearfit.companion.app-main-6:/layout/item_contact.xml"
     },
     {
         "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-mergeDebugResources-3:\\layout\\item_contact.xml",

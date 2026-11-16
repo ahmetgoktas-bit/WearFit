@@ -19,6 +19,7 @@ object WearfitProtocol {
     const val CMD_STEPS_HISTORY: Byte = 0x52.toByte()
     const val CMD_FIND_DEVICE: Byte = 0x71.toByte()
     const val CMD_NOTIFICATION: Byte = 0x72.toByte()
+    const val CMD_ALARM: Byte = 0x73.toByte()
     const val CMD_BATTERY: Byte = 0x91.toByte()
     const val CMD_SET_TIME: Byte = 0x93.toByte()
     const val CMD_QUIET: Byte = 0x76.toByte()
@@ -29,6 +30,21 @@ object WearfitProtocol {
     const val CMD_CONTACT_INIT: Byte = 0xA5.toByte()
     const val CMD_CONTACT_NAME: Byte = 0xA2.toByte()
     const val CMD_CONTACT_NUMBER: Byte = 0xA3.toByte()
+
+    enum class AlarmRepeat(val value: Byte, val label: String) {
+        ONCE(0x80.toByte(), "Bir Kez"),
+        EVERY_DAY(0x7F.toByte(), "Her Gün"),
+        WEEKDAYS(0x1F.toByte(), "Hafta İçi"),
+        WEEKENDS(0x60.toByte(), "Hafta Sonu")
+    }
+
+    data class WatchAlarm(
+        val id: Int,
+        var hour: Int,
+        var minute: Int,
+        var isEnabled: Boolean,
+        var repeat: AlarmRepeat = AlarmRepeat.EVERY_DAY
+    )
 
     data class ContactItem(
         val name: String,
@@ -389,6 +405,61 @@ object WearfitProtocol {
     }
 
     /**
+     * Builds packet to set/enable/disable an alarm on the watch.
+     * Format: AB 00 08 FF 73 80 [index 0..7] [enabled 01/00] [hour 0..23] [minute 0..59] [repeat]
+     */
+    fun buildAlarmCommand(
+        index: Int,
+        enabled: Boolean,
+        hour: Int,
+        minute: Int,
+        repeat: Byte = AlarmRepeat.EVERY_DAY.value
+    ): ByteArray {
+        val safeIndex = index.coerceIn(0, 7).toByte()
+        val safeHour = hour.coerceIn(0, 23).toByte()
+        val safeMinute = minute.coerceIn(0, 59).toByte()
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x08,
+            DELIMITER,
+            CMD_ALARM,
+            0x80.toByte(),
+            safeIndex,
+            if (enabled) 0x01 else 0x00,
+            safeHour,
+            safeMinute,
+            repeat
+        )
+    }
+
+    /**
+     * Builds queries to retrieve existing alarms from the watch.
+     * Tries multiple known command variants for Wearfit / Howear RTOS firmware:
+     * 1. 0x70 general config query with 0x73 target
+     * 2. 0x73 with 0x80 sub-command
+     * 3. 0x73 with 0x00 read flag
+     * 4. 0x73 per-slot queries (0..7)
+     */
+    fun buildQueryAlarmsCommands(): List<ByteArray> {
+        return listOf(
+            // Variant 1: General settings query (CMD 0x70 -> read 0x73)
+            byteArrayOf(HEADER, 0x00, 0x04, DELIMITER, 0x70.toByte(), 0x80.toByte(), CMD_ALARM),
+            // Variant 2: Standard Wearfit alarm query
+            byteArrayOf(HEADER, 0x00, 0x04, DELIMITER, CMD_ALARM, 0x80.toByte(), 0x00),
+            // Variant 3: Alarm query with 0x00 flag
+            byteArrayOf(HEADER, 0x00, 0x04, DELIMITER, CMD_ALARM, 0x00, 0x00),
+            // Variant 4: Short alarm query
+            byteArrayOf(HEADER, 0x00, 0x03, DELIMITER, CMD_ALARM, 0x00),
+            // Variant 5: Query slot 0..7 with 0x80
+            byteArrayOf(HEADER, 0x00, 0x05, DELIMITER, CMD_ALARM, 0x80.toByte(), 0x00, 0x00),
+            byteArrayOf(HEADER, 0x00, 0x05, DELIMITER, CMD_ALARM, 0x80.toByte(), 0x01, 0x00),
+            // Variant 6: General settings query with slot
+            byteArrayOf(HEADER, 0x00, 0x05, DELIMITER, 0x70.toByte(), 0x80.toByte(), CMD_ALARM, 0x00)
+        )
+    }
+
+    /**
      * Builds notification packets to display text on the watch.
      * Format: AB 00 [Length] FF 72 80 [AppId] 02 [Text...]
      */
@@ -420,12 +491,42 @@ object WearfitProtocol {
     fun parseIncomingPacket(
         data: ByteArray,
         onBatteryReceived: (Int) -> Unit,
-        onHealthReceived: (steps: Int, hr: Int, cal: Int, bpSys: Int, bpDia: Int, spO2: Int) -> Unit
+        onHealthReceived: (steps: Int, hr: Int, cal: Int, bpSys: Int, bpDia: Int, spO2: Int) -> Unit,
+        onAlarmReceived: ((WatchAlarm) -> Unit)? = null
     ) {
         if (data.size < 5 || data[0] != HEADER) return
 
         val cmd = data[4]
         when (cmd) {
+            CMD_ALARM, 0x70.toByte() -> {
+                // Incoming alarm from watch:
+                // Standard: AB 00 08 FF 73 80 [index] [enabled] [hour] [minute] [repeat]
+                // Config wrapped: AB 00 09 FF 70 80 73 [index] [enabled] [hour] [minute] [repeat]
+                var offset = 6
+                if (cmd == 0x70.toByte()) {
+                    if (data.size >= 12 && data[6] == CMD_ALARM) {
+                        offset = 7
+                    } else {
+                        offset = -1
+                    }
+                }
+                if (offset != -1 && data.size >= offset + 5) {
+                    val index = data[offset].toInt() and 0xFF
+                    val enabled = data[offset + 1].toInt() != 0
+                    val hour = data[offset + 2].toInt() and 0xFF
+                    val minute = data[offset + 3].toInt() and 0xFF
+                    val repeatByte = data[offset + 4]
+                    val repeat = when (repeatByte.toInt() and 0xFF) {
+                        0x80 -> AlarmRepeat.ONCE
+                        0x7F -> AlarmRepeat.EVERY_DAY
+                        0x1F -> AlarmRepeat.WEEKDAYS
+                        0x60 -> AlarmRepeat.WEEKENDS
+                        else -> AlarmRepeat.EVERY_DAY
+                    }
+                    val alarm = WatchAlarm(index, hour, minute, enabled, repeat)
+                    onAlarmReceived?.invoke(alarm)
+                }
+            }
             CMD_BATTERY -> {
                 // Incoming: AB 00 05 FF 91 80 00 2F
                 if (data.size >= 8) {

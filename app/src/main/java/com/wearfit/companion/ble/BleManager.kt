@@ -10,8 +10,11 @@ import android.util.Log
 import com.wearfit.companion.model.WatchData
 import com.wearfit.companion.service.WearfitForegroundService
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -65,6 +68,9 @@ class BleManager private constructor(private val context: Context) {
 
     private val _watchData = MutableStateFlow(WatchData())
     val watchData: StateFlow<WatchData> = _watchData.asStateFlow()
+
+    private val _watchAlarms = MutableSharedFlow<WearfitProtocol.WatchAlarm>(extraBufferCapacity = 16)
+    val watchAlarms: SharedFlow<WearfitProtocol.WatchAlarm> = _watchAlarms.asSharedFlow()
 
     private val _debugInfo = MutableStateFlow("")
     val debugInfo: StateFlow<String> = _debugInfo.asStateFlow()
@@ -310,6 +316,10 @@ class BleManager private constructor(private val context: Context) {
                     spO2 = if (spO2 > 0) spO2 else _watchData.value.spO2,
                     lastSyncTime = currentTime
                 )
+            },
+            onAlarmReceived = { alarm ->
+                Log.i(TAG, "Parsed Alarm from watch: id=${alarm.id} ${alarm.hour}:${alarm.minute} enabled=${alarm.isEnabled} repeat=${alarm.repeat.label}")
+                _watchAlarms.tryEmit(alarm)
             }
         )
     }
@@ -582,6 +592,48 @@ class BleManager private constructor(private val context: Context) {
     fun setVibrationIntensity(level: Int): Boolean {
         Log.i(TAG, "Setting vibration intensity to $level")
         return sendCommand(WearfitProtocol.buildVibrationIntensityCommand(level))
+    }
+
+    fun setAlarm(alarm: WearfitProtocol.WatchAlarm): Boolean {
+        Log.i(TAG, "Setting watch alarm [${alarm.id}]: ${alarm.hour}:${alarm.minute} enabled=${alarm.isEnabled} repeat=${alarm.repeat.label}")
+        return sendCommand(
+            WearfitProtocol.buildAlarmCommand(
+                index = alarm.id,
+                enabled = alarm.isEnabled,
+                hour = alarm.hour,
+                minute = alarm.minute,
+                repeat = alarm.repeat.value
+            )
+        )
+    }
+
+    fun deleteAlarm(index: Int): Boolean {
+        Log.i(TAG, "Deleting/disabling watch alarm [$index]")
+        return sendCommand(
+            WearfitProtocol.buildAlarmCommand(
+                index = index,
+                enabled = false,
+                hour = 0,
+                minute = 0,
+                repeat = WearfitProtocol.AlarmRepeat.ONCE.value
+            )
+        )
+    }
+
+    fun queryAlarms(): Boolean {
+        if (!isDeviceConnected()) {
+            Log.w(TAG, "Cannot query alarms: Watch not connected")
+            return false
+        }
+        Log.i(TAG, "Querying alarms from watch...")
+        val queries = WearfitProtocol.buildQueryAlarmsCommands()
+        scope.launch {
+            for (q in queries) {
+                sendCommand(q)
+                delay(60)
+            }
+        }
+        return true
     }
 
     suspend fun syncContacts(

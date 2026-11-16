@@ -8,10 +8,6 @@
         "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\layout\\item_device.xml"
     },
     {
-        "merged": "com.wearfit.companion.app-debug-4:/drawable_bg_contact_item.xml.flat",
-        "source": "com.wearfit.companion.app-main-6:/drawable/bg_contact_item.xml"
-    },
-    {
         "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-debug-4:\\xml_backup_rules.xml.flat",
         "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\xml\\backup_rules.xml"
     },
@@ -22,6 +18,14 @@
     {
         "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-debug-4:\\xml_data_extraction_rules.xml.flat",
         "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\xml\\data_extraction_rules.xml"
+    },
+    {
+        "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-debug-4:\\drawable_bg_contact_item.xml.flat",
+        "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\drawable\\bg_contact_item.xml"
+    },
+    {
+        "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-debug-4:\\layout_item_alarm.xml.flat",
+        "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\layout\\item_alarm.xml"
     },
     {
         "merged": "com.wearfit.companion.app-debug-4:/layout_activity_main.xml.flat",
@@ -38,10 +42,6 @@
     {
         "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-debug-4:\\layout_dialog_test_notification.xml.flat",
         "source": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-main-6:\\layout\\dialog_test_notification.xml"
-    },
-    {
-        "merged": "com.wearfit.companion.app-debug-4:/layout_item_contact.xml.flat",
-        "source": "com.wearfit.companion.app-main-6:/layout/item_contact.xml"
     },
     {
         "merged": "C:\\Users\\HP\\.gradle\\daemon\\8.9\\com.wearfit.companion.app-debug-4:\\drawable_circle_index_bg.xml.flat",
