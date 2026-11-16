@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -15,10 +16,15 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.provider.ContactsContract
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -72,6 +78,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val contactList = mutableListOf<WearfitProtocol.ContactItem>()
+
+    private val pickContactLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val contactUri: Uri = result.data?.data ?: return@registerForActivityResult
+            parseAndAddContact(contactUri)
+        }
+    }
+
+    private val contactPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(this, "Rehber izni verildi", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Rehberden kişi seçebilmek veya aktarmak için izin vermelisiniz", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -83,6 +110,7 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupListeners()
         setupVolumeControl()
+        setupContactsSection()
         observeState()
 
         // Check & request background execution / battery optimization exemption
@@ -508,6 +536,199 @@ class MainActivity : AppCompatActivity() {
         } else {
             binding.tvBtAudioStatus.text = "BT Hoparlör: Bağlı Değil / Eşlenmedi"
             binding.tvBtAudioStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_orange))
+        }
+    }
+
+    private fun setupContactsSection() {
+        loadContactsFromPrefs()
+        updateContactsUi()
+
+        binding.btnPickContact.setOnClickListener {
+            if (contactList.size >= 10) {
+                Toast.makeText(this, "En fazla 10 kişi eklenebilir", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                contactPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+            } else {
+                val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                pickContactLauncher.launch(intent)
+            }
+        }
+
+        binding.btnAutoImportContacts.setOnClickListener {
+            autoImportTopContacts()
+        }
+
+        binding.btnClearContacts.setOnClickListener {
+            contactList.clear()
+            saveContactsToPrefs()
+            updateContactsUi()
+            Toast.makeText(this, "Rehber listesi temizlendi", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnSyncContactsToWatch.setOnClickListener {
+            if (!bleManager.isDeviceConnected()) {
+                Toast.makeText(this, "Saat bağlı değil! Önce BLE bağlantısını kurun.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            if (contactList.isEmpty()) {
+                Toast.makeText(this, "Gönderilecek kişi yok. Önce kişi ekleyin.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            binding.btnSyncContactsToWatch.isEnabled = false
+            binding.btnSyncContactsToWatch.text = "Saate Aktarılıyor..."
+
+            lifecycleScope.launch {
+                val success = bleManager.syncContacts(contactList) { current, total ->
+                    binding.btnSyncContactsToWatch.text = "Aktarılıyor ($current/$total)..."
+                }
+
+                binding.btnSyncContactsToWatch.isEnabled = true
+                binding.btnSyncContactsToWatch.text = "⌚ Saate Gönder (Senkronize Et)"
+
+                if (success) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "✅ ${contactList.size} kişi saate başarıyla gönderildi!\nSaatin 'Rehber / Kişiler' menüsünden kontrol edin.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(this@MainActivity, "❌ Kişiler gönderilirken bir hata oluştu.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun parseAndAddContact(contactUri: Uri) {
+        if (contactList.size >= 10) {
+            Toast.makeText(this, "En fazla 10 kişi eklenebilir", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val projection = arrayOf(
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            ContactsContract.CommonDataKinds.Phone.NUMBER
+        )
+        try {
+            contentResolver.query(contactUri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                    val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+                    val name = if (nameIndex >= 0) cursor.getString(nameIndex) ?: "İsimsiz" else "İsimsiz"
+                    val rawNumber = if (numberIndex >= 0) cursor.getString(numberIndex) ?: "" else ""
+                    val cleaned = rawNumber.replace("[^0-9+]".toRegex(), "")
+
+                    if (cleaned.isNotEmpty()) {
+                        contactList.add(WearfitProtocol.ContactItem(name, cleaned))
+                        saveContactsToPrefs()
+                        updateContactsUi()
+                        Toast.makeText(this, "$name eklendi (${contactList.size}/10)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Geçerli bir telefon numarası bulunamadı", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error reading contact: ${e.message}")
+        }
+    }
+
+    private fun autoImportTopContacts() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            contactPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+            return
+        }
+
+        contactList.clear()
+        val projection = arrayOf(
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            ContactsContract.CommonDataKinds.Phone.NUMBER
+        )
+        val sortOrder = "${ContactsContract.CommonDataKinds.Phone.TIMES_CONTACTED} DESC, ${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} ASC"
+        val seenNumbers = mutableSetOf<String>()
+
+        try {
+            contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                projection,
+                null,
+                null,
+                sortOrder
+            )?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+                while (cursor.moveToNext() && contactList.size < 10) {
+                    val name = if (nameIndex >= 0) cursor.getString(nameIndex) ?: "İsimsiz" else "İsimsiz"
+                    val rawNumber = if (numberIndex >= 0) cursor.getString(numberIndex) ?: "" else ""
+                    val cleaned = rawNumber.replace("[^0-9+]".toRegex(), "")
+
+                    if (cleaned.length >= 7 && seenNumbers.add(cleaned)) {
+                        contactList.add(WearfitProtocol.ContactItem(name, cleaned))
+                    }
+                }
+            }
+            saveContactsToPrefs()
+            updateContactsUi()
+            Toast.makeText(this, "${contactList.size} kişi rehberden aktarıldı", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error auto-importing contacts: ${e.message}")
+            Toast.makeText(this, "Rehber okunurken hata oluştu", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveContactsToPrefs() {
+        val prefs = getSharedPreferences("wearfit_contacts", Context.MODE_PRIVATE)
+        val array = JSONArray()
+        for (c in contactList) {
+            val obj = JSONObject()
+            obj.put("name", c.name)
+            obj.put("number", c.number)
+            array.put(obj)
+        }
+        prefs.edit().putString("saved_contacts", array.toString()).apply()
+    }
+
+    private fun loadContactsFromPrefs() {
+        contactList.clear()
+        val prefs = getSharedPreferences("wearfit_contacts", Context.MODE_PRIVATE)
+        val jsonStr = prefs.getString("saved_contacts", null) ?: return
+        try {
+            val array = JSONArray(jsonStr)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val name = obj.getString("name")
+                val number = obj.getString("number")
+                contactList.add(WearfitProtocol.ContactItem(name, number))
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun updateContactsUi() {
+        binding.tvContactCount.text = "${contactList.size}/10"
+        binding.tvEmptyContacts.visibility = if (contactList.isEmpty()) View.VISIBLE else View.GONE
+        binding.btnPickContact.isEnabled = contactList.size < 10
+        binding.btnAutoImportContacts.isEnabled = contactList.size < 10
+        binding.layoutContactList.removeAllViews()
+
+        for (i in contactList.indices) {
+            val contact = contactList[i]
+            val itemView = layoutInflater.inflate(R.layout.item_contact, binding.layoutContactList, false)
+
+            itemView.findViewById<TextView>(R.id.tvIndex).text = (i + 1).toString()
+            itemView.findViewById<TextView>(R.id.tvContactName).text = contact.name
+            itemView.findViewById<TextView>(R.id.tvContactNumber).text = contact.number
+
+            itemView.findViewById<View>(R.id.btnDeleteContact).setOnClickListener {
+                contactList.removeAt(i)
+                saveContactsToPrefs()
+                updateContactsUi()
+            }
+
+            binding.layoutContactList.addView(itemView)
         }
     }
 

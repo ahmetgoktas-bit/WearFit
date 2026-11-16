@@ -61,6 +61,7 @@ class BleManager private constructor(private val context: Context) {
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
+    fun isDeviceConnected(): Boolean = _connectionState.value == ConnectionState.CONNECTED
 
     private val _watchData = MutableStateFlow(WatchData())
     val watchData: StateFlow<WatchData> = _watchData.asStateFlow()
@@ -581,6 +582,46 @@ class BleManager private constructor(private val context: Context) {
     fun setVibrationIntensity(level: Int): Boolean {
         Log.i(TAG, "Setting vibration intensity to $level")
         return sendCommand(WearfitProtocol.buildVibrationIntensityCommand(level))
+    }
+
+    suspend fun syncContacts(
+        contacts: List<WearfitProtocol.ContactItem>,
+        sosIndex: Int = 0,
+        onProgress: ((current: Int, total: Int) -> Unit)? = null
+    ): Boolean {
+        if (!isDeviceConnected()) {
+            Log.w(TAG, "Cannot sync contacts: Watch not connected")
+            return false
+        }
+        val safeContacts = contacts.take(10)
+        val count = safeContacts.size
+        Log.i(TAG, "Syncing $count contacts to watch (SOS index=$sosIndex)...")
+
+        // 1. Send Init / Count packet
+        val initCmd = WearfitProtocol.buildContactInitCommand(count, sosIndex)
+        sendCommand(initCmd)
+        delay(100)
+
+        // 2. Send each contact (Name + Number)
+        for (i in safeContacts.indices) {
+            val contact = safeContacts[i]
+            Log.d(TAG, "Sending contact [$i]: ${contact.name} (${contact.number})")
+
+            val namePackets = WearfitProtocol.buildContactNameCommands(contact.name, i)
+            for (p in namePackets) {
+                sendCommand(p)
+                delay(80)
+            }
+
+            val numberPacket = WearfitProtocol.buildContactNumberCommand(contact.number, i)
+            sendCommand(numberPacket)
+            delay(80)
+
+            onProgress?.invoke(i + 1, count)
+        }
+
+        Log.i(TAG, "Finished syncing $count contacts to watch successfully")
+        return true
     }
 
     fun findDevice(enable: Boolean = true) {

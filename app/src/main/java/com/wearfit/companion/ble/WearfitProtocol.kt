@@ -26,6 +26,15 @@ object WearfitProtocol {
     const val CMD_ALERT_MODE: Byte = 0x7A.toByte()
     const val CMD_VIBRATION: Byte = 0x7D.toByte()
     const val CMD_MEDIA_CONTROL: Byte = 0x99.toByte()
+    const val CMD_CONTACT_INIT: Byte = 0xA5.toByte()
+    const val CMD_CONTACT_NAME: Byte = 0xA2.toByte()
+    const val CMD_CONTACT_NUMBER: Byte = 0xA3.toByte()
+
+    data class ContactItem(
+        val name: String,
+        val number: String,
+        val isSos: Boolean = false
+    )
 
     enum class AlertMode(val value: Byte) {
         SOUND_AND_VIBRATION(0x03),
@@ -283,6 +292,100 @@ object WearfitProtocol {
             0x80.toByte(),
             safeLevel
         )
+    }
+
+    /**
+     * Builds packet to initialize contact sync (contact count & SOS index).
+     * Format: AB 00 05 FF A5 80 [sosIndex] [count]
+     */
+    fun buildContactInitCommand(count: Int, sosIndex: Int = 0): ByteArray {
+        val safeCount = count.coerceIn(0, 20).toByte()
+        val safeSos = sosIndex.coerceIn(0, 19).toByte()
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x05,
+            DELIMITER,
+            CMD_CONTACT_INIT,
+            0x80.toByte(),
+            safeSos,
+            safeCount
+        )
+    }
+
+    /**
+     * Builds contact name packet(s) for the specified slot index.
+     * Format: AB 00 [lenD] FF A2 [pos] [nameBytes]
+     * If name > 14 bytes, split into two BLE packets:
+     * - Packet 1: 6 header bytes + 14 name bytes = 20 bytes
+     * - Packet 2: 0x00 continuation byte + remaining name bytes
+     */
+    fun buildContactNameCommands(name: String, pos: Int): List<ByteArray> {
+        val msg = name.toByteArray(StandardCharsets.UTF_8)
+        val msgByte = if (msg.size > 33) msg.copyOfRange(0, 33) else msg
+        val lenD = (msgByte.size + 3).toByte()
+
+        return if (msgByte.size <= 14) {
+            val packet = ByteArray(6 + msgByte.size)
+            packet[0] = HEADER
+            packet[1] = 0x00
+            packet[2] = lenD
+            packet[3] = DELIMITER
+            packet[4] = CMD_CONTACT_NAME
+            packet[5] = pos.toByte()
+            System.arraycopy(msgByte, 0, packet, 6, msgByte.size)
+            listOf(packet)
+        } else {
+            val p1 = ByteArray(20)
+            p1[0] = HEADER
+            p1[1] = 0x00
+            p1[2] = lenD
+            p1[3] = DELIMITER
+            p1[4] = CMD_CONTACT_NAME
+            p1[5] = pos.toByte()
+            System.arraycopy(msgByte, 0, p1, 6, 14)
+
+            val remSize = msgByte.size - 14
+            val p2 = ByteArray(1 + remSize)
+            p2[0] = 0x00.toByte()
+            System.arraycopy(msgByte, 14, p2, 1, remSize)
+
+            listOf(p1, p2)
+        }
+    }
+
+    /**
+     * Builds contact phone number packet for the specified slot index.
+     * Phone digits and '+' are packed into nibbles:
+     * '+' -> 0x0A, '0'..'9' -> 0x0..0x9
+     * Format: AB 00 [lenD] FF A3 [pos] [lenN] [packedDigits...]
+     */
+    fun buildContactNumberCommand(rawNumber: String, pos: Int): ByteArray {
+        var cleaned = rawNumber.replace("[^0-9+]".toRegex(), "")
+        if (cleaned.length > 20) {
+            cleaned = cleaned.substring(0, 20)
+        }
+        val lenN = cleaned.length.toByte()
+        var padded = if (cleaned.length % 2 != 0) cleaned + "0" else cleaned
+        padded = padded.replace("+", "A")
+
+        val phoneBytes = ByteArray(padded.length / 2)
+        for (x in 0 until padded.length / 2) {
+            val pair = padded.substring(x * 2, (x + 1) * 2)
+            phoneBytes[x] = pair.reversed().toInt(16).toByte()
+        }
+
+        val lenD = (4 + phoneBytes.size).toByte()
+        val packet = ByteArray(7 + phoneBytes.size)
+        packet[0] = HEADER
+        packet[1] = 0x00
+        packet[2] = lenD
+        packet[3] = DELIMITER
+        packet[4] = CMD_CONTACT_NUMBER
+        packet[5] = pos.toByte()
+        packet[6] = lenN
+        System.arraycopy(phoneBytes, 0, packet, 7, phoneBytes.size)
+        return packet
     }
 
     /**

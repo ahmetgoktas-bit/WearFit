@@ -2912,6 +2912,7 @@ drawable abc_textfield_search_material
 drawable abc_vector_test
 drawable avd_hide_password
 drawable avd_show_password
+drawable bg_contact_item
 drawable bg_status_badge
 drawable btn_checkbox_checked_mtrl
 drawable btn_checkbox_checked_to_unchecked_mtrl_animation
@@ -2921,6 +2922,7 @@ drawable btn_radio_off_mtrl
 drawable btn_radio_off_to_on_mtrl_animation
 drawable btn_radio_on_mtrl
 drawable btn_radio_on_to_off_mtrl_animation
+drawable circle_index_bg
 drawable design_fab_background
 drawable design_ic_visibility
 drawable design_ic_visibility_off
@@ -3112,14 +3114,19 @@ id bounce
 id btnAlertSilent
 id btnAlertSoundVib
 id btnAlertVibOnly
+id btnAutoImportContacts
+id btnClearContacts
 id btnConnect
+id btnDeleteContact
 id btnDisconnect
 id btnFindDevice
 id btnGrantBatteryOptimization
 id btnGrantNotificationAccess
 id btnOpenBtSettings
+id btnPickContact
 id btnQuickConnect
 id btnScan
+id btnSyncContactsToWatch
 id btnSyncHealth
 id btnSyncTime
 id btnTestNotification
@@ -3134,6 +3141,7 @@ id buttonPanel
 id cancel_button
 id cardBatteryOptimization
 id cardConnectedDevice
+id cardContacts
 id cardNotificationPermission
 id cardSavedWatch
 id cardVolumeControl
@@ -3255,6 +3263,7 @@ id jumpToStart
 id labeled
 id layout
 id layoutBtAudioStatus
+id layoutContactList
 id left
 id leftToRight
 id legacy
@@ -3496,10 +3505,15 @@ id tvCalories
 id tvConnectedDeviceAddress
 id tvConnectedDeviceName
 id tvConnectionStatus
+id tvContactCount
+id tvContactName
+id tvContactNumber
 id tvDeviceAddress
 id tvDeviceName
+id tvEmptyContacts
 id tvEmptyDevices
 id tvHeartRate
+id tvIndex
 id tvLastHealthSync
 id tvRssi
 id tvSpO2
@@ -3656,6 +3670,7 @@ layout design_text_input_start_icon
 layout dialog_test_notification
 layout ime_base_split_test_activity
 layout ime_secondary_split_test_activity
+layout item_contact
 layout item_device
 layout m3_alert_dialog
 layout m3_alert_dialog_actions
