@@ -21,6 +21,18 @@ object WearfitProtocol {
     const val CMD_NOTIFICATION: Byte = 0x72.toByte()
     const val CMD_BATTERY: Byte = 0x91.toByte()
     const val CMD_SET_TIME: Byte = 0x93.toByte()
+    const val CMD_QUIET: Byte = 0x76.toByte()
+    const val CMD_RAISE_TO_WAKE: Byte = 0x77.toByte()
+    const val CMD_ALERT_MODE: Byte = 0x7A.toByte()
+    const val CMD_VIBRATION: Byte = 0x7D.toByte()
+    const val CMD_MEDIA_CONTROL: Byte = 0x99.toByte()
+
+    enum class AlertMode(val value: Byte) {
+        SOUND_AND_VIBRATION(0x03),
+        VIBRATION_ONLY(0x01),
+        SOUND_ONLY(0x02),
+        SILENT(0x00)
+    }
 
     private var latestStepsTimestamp: Long = 0L
     private var latestHrTimestamp: Long = 0L
@@ -199,6 +211,77 @@ object WearfitProtocol {
             byteArrayOf(HEADER, 0x00, 0x04, DELIMITER, CMD_FIND_DEVICE, 0x80.toByte(), 0x00),
             byteArrayOf(HEADER, 0x00, 0x04, DELIMITER, CMD_FIND_DEVICE, 0x80.toByte(), 0x02),
             byteArrayOf(HEADER, 0x00, 0x05, DELIMITER, CMD_NOTIFICATION, 0x80.toByte(), 0x02, 0x02)
+        )
+    }
+
+    /**
+     * Builds packet to set volume level on watch.
+     * Format: AB 00 05 FF 99 80 A0 [level 0..100]
+     */
+    fun buildVolumeCommand(level: Int): ByteArray {
+        val safeLevel = level.coerceIn(0, 100).toByte()
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x05,
+            DELIMITER,
+            CMD_MEDIA_CONTROL,
+            0x80.toByte(),
+            0xA0.toByte(),
+            safeLevel
+        )
+    }
+
+    /**
+     * Builds packet to enable or disable Quiet Hours (DND / Sessiz Mod) on watch.
+     * Format: AB 00 08 FF 76 80 [01=enable/00=disable] [startH] [startM] [endH] [endM]
+     */
+    fun buildQuietHoursCommand(enabled: Boolean, startH: Int = 0, startM: Int = 0, endH: Int = 23, endM: Int = 59): ByteArray {
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x08,
+            DELIMITER,
+            CMD_QUIET,
+            0x80.toByte(),
+            if (enabled) 0x01 else 0x00,
+            startH.toByte(),
+            startM.toByte(),
+            endH.toByte(),
+            endM.toByte()
+        )
+    }
+
+    /**
+     * Builds packet to set sound & vibration alert mode on the watch.
+     * Format: AB 00 05 FF 7A 80 [Mode]
+     */
+    fun buildAlertModeCommand(mode: AlertMode): ByteArray {
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x05,
+            DELIMITER,
+            CMD_ALERT_MODE,
+            0x80.toByte(),
+            mode.value
+        )
+    }
+
+    /**
+     * Builds packet to set vibration intensity on the watch.
+     * Format: AB 00 05 FF 7D 80 [Level: 1=Soft, 2=Medium, 3=Strong]
+     */
+    fun buildVibrationIntensityCommand(level: Int): ByteArray {
+        val safeLevel = level.coerceIn(1, 3).toByte()
+        return byteArrayOf(
+            HEADER,
+            0x00,
+            0x05,
+            DELIMITER,
+            CMD_VIBRATION,
+            0x80.toByte(),
+            safeLevel
         )
     }
 

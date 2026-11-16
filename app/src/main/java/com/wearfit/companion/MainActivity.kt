@@ -4,9 +4,13 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +37,7 @@ import com.wearfit.companion.ble.WearfitProtocol
 import com.wearfit.companion.databinding.ActivityMainBinding
 import com.wearfit.companion.ui.DeviceAdapter
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,6 +46,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bleScanner: BleScanner
     private lateinit var deviceAdapter: DeviceAdapter
     private var isFindingDevice = false
+
+    private lateinit var audioManager: AudioManager
+    private var isVolumeReceiverRegistered = false
+
+    private val volumeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            updateVolumeUi()
+        }
+    }
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -68,6 +82,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupListeners()
+        setupVolumeControl()
         observeState()
 
         // Check & request background execution / battery optimization exemption
@@ -87,6 +102,23 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         checkNotificationListenerPermission()
         updateBatteryOptimizationCard()
+
+        if (!isVolumeReceiverRegistered) {
+            val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+            registerReceiver(volumeReceiver, filter)
+            isVolumeReceiverRegistered = true
+        }
+        updateVolumeUi()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (isVolumeReceiverRegistered) {
+            try {
+                unregisterReceiver(volumeReceiver)
+            } catch (_: Exception) {}
+            isVolumeReceiverRegistered = false
+        }
     }
 
     private fun setupRecyclerView() {
@@ -345,6 +377,138 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.btn_cancel, null)
             .show()
+    }
+
+    private fun setupVolumeControl() {
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        updateVolumeUi()
+
+        binding.sliderVolume.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                setDeviceVolumePercent(value.toInt())
+            }
+        }
+
+        binding.btnVolumeDown.setOnClickListener {
+            adjustVolumeStep(-1)
+        }
+
+        binding.btnVolumeUp.setOnClickListener {
+            adjustVolumeStep(1)
+        }
+
+        binding.btnVolMute.setOnClickListener {
+            setDeviceVolumePercent(0)
+        }
+
+        binding.btnVol50.setOnClickListener {
+            setDeviceVolumePercent(50)
+        }
+
+        binding.btnVolMax.setOnClickListener {
+            setDeviceVolumePercent(100)
+        }
+
+        binding.btnOpenBtSettings.setOnClickListener {
+            try {
+                startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+            } catch (_: Exception) {}
+        }
+
+        binding.btnAlertSoundVib.setOnClickListener {
+            bleManager.setAlertMode(WearfitProtocol.AlertMode.SOUND_AND_VIBRATION)
+            bleManager.setQuietMode(false)
+            Toast.makeText(this, "Bildirim Modu: Ses + Titreşim", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnAlertVibOnly.setOnClickListener {
+            bleManager.setAlertMode(WearfitProtocol.AlertMode.VIBRATION_ONLY)
+            bleManager.setQuietMode(false)
+            Toast.makeText(this, "Bildirim Modu: Yalnızca Titreşim", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnAlertSilent.setOnClickListener {
+            bleManager.setAlertMode(WearfitProtocol.AlertMode.SILENT)
+            bleManager.setQuietMode(true)
+            Toast.makeText(this, "Bildirim Modu: Sessiz (Rahatsız Etmeyin)", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnVibSoft.setOnClickListener {
+            bleManager.setVibrationIntensity(1)
+            Toast.makeText(this, "Titreşim Gücü: Hafif", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnVibStrong.setOnClickListener {
+            bleManager.setVibrationIntensity(3)
+            Toast.makeText(this, "Titreşim Gücü: Güçlü", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setDeviceVolumePercent(percent: Int) {
+        val maxCallVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL).coerceAtLeast(1)
+        val maxMusicVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+
+        val targetCallVol = (percent * maxCallVol / 100.0).roundToInt().coerceIn(0, maxCallVol)
+        val targetMusicVol = (percent * maxMusicVol / 100.0).roundToInt().coerceIn(0, maxMusicVol)
+
+        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, targetCallVol, 0)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetMusicVol, 0)
+
+        // Send volume and quiet mode commands over BLE to watch
+        bleManager.setWatchVolume(percent)
+        if (percent == 0) {
+            bleManager.setQuietMode(true)
+        } else {
+            bleManager.setQuietMode(false)
+        }
+
+        binding.tvVolumePercent.text = "%$percent"
+        if (binding.sliderVolume.value.toInt() != percent) {
+            binding.sliderVolume.value = percent.toFloat()
+        }
+    }
+
+    private fun adjustVolumeStep(direction: Int) {
+        val current = binding.sliderVolume.value.toInt()
+        val next = (current + direction * 10).coerceIn(0, 100)
+        setDeviceVolumePercent(next)
+    }
+
+    private fun updateVolumeUi() {
+        if (!::audioManager.isInitialized) return
+        val maxCallVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL).coerceAtLeast(1)
+        val curCallVol = audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
+        val percent = (curCallVol * 100.0 / maxCallVol).roundToInt().coerceIn(0, 100)
+
+        binding.sliderVolume.value = percent.toFloat()
+        binding.tvVolumePercent.text = "%$percent"
+
+        checkBtAudioConnection()
+    }
+
+    private fun checkBtAudioConnection() {
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val adapter = bluetoothManager?.adapter
+        val isCallAudioConnected = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                adapter?.getProfileConnectionState(BluetoothProfile.HEADSET) == BluetoothProfile.STATE_CONNECTED ||
+                adapter?.getProfileConnectionState(BluetoothProfile.A2DP) == BluetoothProfile.STATE_CONNECTED
+            } else false
+        } else {
+            @Suppress("DEPRECATION")
+            adapter?.getProfileConnectionState(BluetoothProfile.HEADSET) == BluetoothProfile.STATE_CONNECTED ||
+            @Suppress("DEPRECATION")
+            adapter?.getProfileConnectionState(BluetoothProfile.A2DP) == BluetoothProfile.STATE_CONNECTED
+        }
+
+        if (isCallAudioConnected) {
+            binding.tvBtAudioStatus.text = "BT Hoparlör: Bağlı (HK10 Call)"
+            binding.tvBtAudioStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
+        } else {
+            binding.tvBtAudioStatus.text = "BT Hoparlör: Bağlı Değil / Eşlenmedi"
+            binding.tvBtAudioStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_orange))
+        }
     }
 
     override fun onDestroy() {

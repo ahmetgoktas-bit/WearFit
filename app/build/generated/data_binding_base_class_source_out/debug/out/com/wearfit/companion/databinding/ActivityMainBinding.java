@@ -4,6 +4,7 @@ package com.wearfit.companion.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -14,6 +15,7 @@ import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.slider.Slider;
 import com.wearfit.companion.R;
 import java.lang.NullPointerException;
 import java.lang.Override;
@@ -22,6 +24,15 @@ import java.lang.String;
 public final class ActivityMainBinding implements ViewBinding {
   @NonNull
   private final CoordinatorLayout rootView;
+
+  @NonNull
+  public final MaterialButton btnAlertSilent;
+
+  @NonNull
+  public final MaterialButton btnAlertSoundVib;
+
+  @NonNull
+  public final MaterialButton btnAlertVibOnly;
 
   @NonNull
   public final MaterialButton btnDisconnect;
@@ -34,6 +45,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
   @NonNull
   public final MaterialButton btnGrantNotificationAccess;
+
+  @NonNull
+  public final TextView btnOpenBtSettings;
 
   @NonNull
   public final MaterialButton btnQuickConnect;
@@ -51,6 +65,27 @@ public final class ActivityMainBinding implements ViewBinding {
   public final MaterialButton btnTestNotification;
 
   @NonNull
+  public final MaterialButton btnVibSoft;
+
+  @NonNull
+  public final MaterialButton btnVibStrong;
+
+  @NonNull
+  public final MaterialButton btnVol50;
+
+  @NonNull
+  public final MaterialButton btnVolMax;
+
+  @NonNull
+  public final MaterialButton btnVolMute;
+
+  @NonNull
+  public final MaterialButton btnVolumeDown;
+
+  @NonNull
+  public final MaterialButton btnVolumeUp;
+
+  @NonNull
   public final MaterialCardView cardBatteryOptimization;
 
   @NonNull
@@ -63,16 +98,28 @@ public final class ActivityMainBinding implements ViewBinding {
   public final MaterialCardView cardSavedWatch;
 
   @NonNull
+  public final MaterialCardView cardVolumeControl;
+
+  @NonNull
+  public final LinearLayout layoutBtAudioStatus;
+
+  @NonNull
   public final ProgressBar progressScan;
 
   @NonNull
   public final RecyclerView rvDevices;
 
   @NonNull
+  public final Slider sliderVolume;
+
+  @NonNull
   public final TextView tvBattery;
 
   @NonNull
   public final TextView tvBloodPressure;
+
+  @NonNull
+  public final TextView tvBtAudioStatus;
 
   @NonNull
   public final TextView tvCalories;
@@ -101,40 +148,65 @@ public final class ActivityMainBinding implements ViewBinding {
   @NonNull
   public final TextView tvSteps;
 
+  @NonNull
+  public final TextView tvVolumePercent;
+
   private ActivityMainBinding(@NonNull CoordinatorLayout rootView,
-      @NonNull MaterialButton btnDisconnect, @NonNull MaterialButton btnFindDevice,
-      @NonNull MaterialButton btnGrantBatteryOptimization,
-      @NonNull MaterialButton btnGrantNotificationAccess, @NonNull MaterialButton btnQuickConnect,
-      @NonNull MaterialButton btnScan, @NonNull MaterialButton btnSyncHealth,
-      @NonNull MaterialButton btnSyncTime, @NonNull MaterialButton btnTestNotification,
+      @NonNull MaterialButton btnAlertSilent, @NonNull MaterialButton btnAlertSoundVib,
+      @NonNull MaterialButton btnAlertVibOnly, @NonNull MaterialButton btnDisconnect,
+      @NonNull MaterialButton btnFindDevice, @NonNull MaterialButton btnGrantBatteryOptimization,
+      @NonNull MaterialButton btnGrantNotificationAccess, @NonNull TextView btnOpenBtSettings,
+      @NonNull MaterialButton btnQuickConnect, @NonNull MaterialButton btnScan,
+      @NonNull MaterialButton btnSyncHealth, @NonNull MaterialButton btnSyncTime,
+      @NonNull MaterialButton btnTestNotification, @NonNull MaterialButton btnVibSoft,
+      @NonNull MaterialButton btnVibStrong, @NonNull MaterialButton btnVol50,
+      @NonNull MaterialButton btnVolMax, @NonNull MaterialButton btnVolMute,
+      @NonNull MaterialButton btnVolumeDown, @NonNull MaterialButton btnVolumeUp,
       @NonNull MaterialCardView cardBatteryOptimization,
       @NonNull MaterialCardView cardConnectedDevice,
       @NonNull MaterialCardView cardNotificationPermission,
-      @NonNull MaterialCardView cardSavedWatch, @NonNull ProgressBar progressScan,
-      @NonNull RecyclerView rvDevices, @NonNull TextView tvBattery,
-      @NonNull TextView tvBloodPressure, @NonNull TextView tvCalories,
-      @NonNull TextView tvConnectedDeviceAddress, @NonNull TextView tvConnectedDeviceName,
-      @NonNull TextView tvConnectionStatus, @NonNull TextView tvEmptyDevices,
-      @NonNull TextView tvHeartRate, @NonNull TextView tvLastHealthSync, @NonNull TextView tvSpO2,
-      @NonNull TextView tvSteps) {
+      @NonNull MaterialCardView cardSavedWatch, @NonNull MaterialCardView cardVolumeControl,
+      @NonNull LinearLayout layoutBtAudioStatus, @NonNull ProgressBar progressScan,
+      @NonNull RecyclerView rvDevices, @NonNull Slider sliderVolume, @NonNull TextView tvBattery,
+      @NonNull TextView tvBloodPressure, @NonNull TextView tvBtAudioStatus,
+      @NonNull TextView tvCalories, @NonNull TextView tvConnectedDeviceAddress,
+      @NonNull TextView tvConnectedDeviceName, @NonNull TextView tvConnectionStatus,
+      @NonNull TextView tvEmptyDevices, @NonNull TextView tvHeartRate,
+      @NonNull TextView tvLastHealthSync, @NonNull TextView tvSpO2, @NonNull TextView tvSteps,
+      @NonNull TextView tvVolumePercent) {
     this.rootView = rootView;
+    this.btnAlertSilent = btnAlertSilent;
+    this.btnAlertSoundVib = btnAlertSoundVib;
+    this.btnAlertVibOnly = btnAlertVibOnly;
     this.btnDisconnect = btnDisconnect;
     this.btnFindDevice = btnFindDevice;
     this.btnGrantBatteryOptimization = btnGrantBatteryOptimization;
     this.btnGrantNotificationAccess = btnGrantNotificationAccess;
+    this.btnOpenBtSettings = btnOpenBtSettings;
     this.btnQuickConnect = btnQuickConnect;
     this.btnScan = btnScan;
     this.btnSyncHealth = btnSyncHealth;
     this.btnSyncTime = btnSyncTime;
     this.btnTestNotification = btnTestNotification;
+    this.btnVibSoft = btnVibSoft;
+    this.btnVibStrong = btnVibStrong;
+    this.btnVol50 = btnVol50;
+    this.btnVolMax = btnVolMax;
+    this.btnVolMute = btnVolMute;
+    this.btnVolumeDown = btnVolumeDown;
+    this.btnVolumeUp = btnVolumeUp;
     this.cardBatteryOptimization = cardBatteryOptimization;
     this.cardConnectedDevice = cardConnectedDevice;
     this.cardNotificationPermission = cardNotificationPermission;
     this.cardSavedWatch = cardSavedWatch;
+    this.cardVolumeControl = cardVolumeControl;
+    this.layoutBtAudioStatus = layoutBtAudioStatus;
     this.progressScan = progressScan;
     this.rvDevices = rvDevices;
+    this.sliderVolume = sliderVolume;
     this.tvBattery = tvBattery;
     this.tvBloodPressure = tvBloodPressure;
+    this.tvBtAudioStatus = tvBtAudioStatus;
     this.tvCalories = tvCalories;
     this.tvConnectedDeviceAddress = tvConnectedDeviceAddress;
     this.tvConnectedDeviceName = tvConnectedDeviceName;
@@ -144,6 +216,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.tvLastHealthSync = tvLastHealthSync;
     this.tvSpO2 = tvSpO2;
     this.tvSteps = tvSteps;
+    this.tvVolumePercent = tvVolumePercent;
   }
 
   @Override
@@ -173,6 +246,24 @@ public final class ActivityMainBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.btnAlertSilent;
+      MaterialButton btnAlertSilent = ViewBindings.findChildViewById(rootView, id);
+      if (btnAlertSilent == null) {
+        break missingId;
+      }
+
+      id = R.id.btnAlertSoundVib;
+      MaterialButton btnAlertSoundVib = ViewBindings.findChildViewById(rootView, id);
+      if (btnAlertSoundVib == null) {
+        break missingId;
+      }
+
+      id = R.id.btnAlertVibOnly;
+      MaterialButton btnAlertVibOnly = ViewBindings.findChildViewById(rootView, id);
+      if (btnAlertVibOnly == null) {
+        break missingId;
+      }
+
       id = R.id.btnDisconnect;
       MaterialButton btnDisconnect = ViewBindings.findChildViewById(rootView, id);
       if (btnDisconnect == null) {
@@ -194,6 +285,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btnGrantNotificationAccess;
       MaterialButton btnGrantNotificationAccess = ViewBindings.findChildViewById(rootView, id);
       if (btnGrantNotificationAccess == null) {
+        break missingId;
+      }
+
+      id = R.id.btnOpenBtSettings;
+      TextView btnOpenBtSettings = ViewBindings.findChildViewById(rootView, id);
+      if (btnOpenBtSettings == null) {
         break missingId;
       }
 
@@ -227,6 +324,48 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnVibSoft;
+      MaterialButton btnVibSoft = ViewBindings.findChildViewById(rootView, id);
+      if (btnVibSoft == null) {
+        break missingId;
+      }
+
+      id = R.id.btnVibStrong;
+      MaterialButton btnVibStrong = ViewBindings.findChildViewById(rootView, id);
+      if (btnVibStrong == null) {
+        break missingId;
+      }
+
+      id = R.id.btnVol50;
+      MaterialButton btnVol50 = ViewBindings.findChildViewById(rootView, id);
+      if (btnVol50 == null) {
+        break missingId;
+      }
+
+      id = R.id.btnVolMax;
+      MaterialButton btnVolMax = ViewBindings.findChildViewById(rootView, id);
+      if (btnVolMax == null) {
+        break missingId;
+      }
+
+      id = R.id.btnVolMute;
+      MaterialButton btnVolMute = ViewBindings.findChildViewById(rootView, id);
+      if (btnVolMute == null) {
+        break missingId;
+      }
+
+      id = R.id.btnVolumeDown;
+      MaterialButton btnVolumeDown = ViewBindings.findChildViewById(rootView, id);
+      if (btnVolumeDown == null) {
+        break missingId;
+      }
+
+      id = R.id.btnVolumeUp;
+      MaterialButton btnVolumeUp = ViewBindings.findChildViewById(rootView, id);
+      if (btnVolumeUp == null) {
+        break missingId;
+      }
+
       id = R.id.cardBatteryOptimization;
       MaterialCardView cardBatteryOptimization = ViewBindings.findChildViewById(rootView, id);
       if (cardBatteryOptimization == null) {
@@ -251,6 +390,18 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.cardVolumeControl;
+      MaterialCardView cardVolumeControl = ViewBindings.findChildViewById(rootView, id);
+      if (cardVolumeControl == null) {
+        break missingId;
+      }
+
+      id = R.id.layoutBtAudioStatus;
+      LinearLayout layoutBtAudioStatus = ViewBindings.findChildViewById(rootView, id);
+      if (layoutBtAudioStatus == null) {
+        break missingId;
+      }
+
       id = R.id.progressScan;
       ProgressBar progressScan = ViewBindings.findChildViewById(rootView, id);
       if (progressScan == null) {
@@ -263,6 +414,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.sliderVolume;
+      Slider sliderVolume = ViewBindings.findChildViewById(rootView, id);
+      if (sliderVolume == null) {
+        break missingId;
+      }
+
       id = R.id.tvBattery;
       TextView tvBattery = ViewBindings.findChildViewById(rootView, id);
       if (tvBattery == null) {
@@ -272,6 +429,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.tvBloodPressure;
       TextView tvBloodPressure = ViewBindings.findChildViewById(rootView, id);
       if (tvBloodPressure == null) {
+        break missingId;
+      }
+
+      id = R.id.tvBtAudioStatus;
+      TextView tvBtAudioStatus = ViewBindings.findChildViewById(rootView, id);
+      if (tvBtAudioStatus == null) {
         break missingId;
       }
 
@@ -329,12 +492,21 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityMainBinding((CoordinatorLayout) rootView, btnDisconnect, btnFindDevice,
-          btnGrantBatteryOptimization, btnGrantNotificationAccess, btnQuickConnect, btnScan,
-          btnSyncHealth, btnSyncTime, btnTestNotification, cardBatteryOptimization,
-          cardConnectedDevice, cardNotificationPermission, cardSavedWatch, progressScan, rvDevices,
-          tvBattery, tvBloodPressure, tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName,
-          tvConnectionStatus, tvEmptyDevices, tvHeartRate, tvLastHealthSync, tvSpO2, tvSteps);
+      id = R.id.tvVolumePercent;
+      TextView tvVolumePercent = ViewBindings.findChildViewById(rootView, id);
+      if (tvVolumePercent == null) {
+        break missingId;
+      }
+
+      return new ActivityMainBinding((CoordinatorLayout) rootView, btnAlertSilent, btnAlertSoundVib,
+          btnAlertVibOnly, btnDisconnect, btnFindDevice, btnGrantBatteryOptimization,
+          btnGrantNotificationAccess, btnOpenBtSettings, btnQuickConnect, btnScan, btnSyncHealth,
+          btnSyncTime, btnTestNotification, btnVibSoft, btnVibStrong, btnVol50, btnVolMax,
+          btnVolMute, btnVolumeDown, btnVolumeUp, cardBatteryOptimization, cardConnectedDevice,
+          cardNotificationPermission, cardSavedWatch, cardVolumeControl, layoutBtAudioStatus,
+          progressScan, rvDevices, sliderVolume, tvBattery, tvBloodPressure, tvBtAudioStatus,
+          tvCalories, tvConnectedDeviceAddress, tvConnectedDeviceName, tvConnectionStatus,
+          tvEmptyDevices, tvHeartRate, tvLastHealthSync, tvSpO2, tvSteps, tvVolumePercent);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

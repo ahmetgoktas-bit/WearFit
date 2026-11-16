@@ -563,6 +563,26 @@ class BleManager private constructor(private val context: Context) {
         periodicJob = null
     }
 
+    fun setWatchVolume(percent: Int): Boolean {
+        Log.i(TAG, "Setting watch volume via BLE: $percent%")
+        return sendCommand(WearfitProtocol.buildVolumeCommand(percent))
+    }
+
+    fun setQuietMode(enabled: Boolean): Boolean {
+        Log.i(TAG, "Setting watch quiet mode via BLE: $enabled")
+        return sendCommand(WearfitProtocol.buildQuietHoursCommand(enabled))
+    }
+
+    fun setAlertMode(mode: WearfitProtocol.AlertMode): Boolean {
+        Log.i(TAG, "Setting watch alert mode to $mode")
+        return sendCommand(WearfitProtocol.buildAlertModeCommand(mode))
+    }
+
+    fun setVibrationIntensity(level: Int): Boolean {
+        Log.i(TAG, "Setting vibration intensity to $level")
+        return sendCommand(WearfitProtocol.buildVibrationIntensityCommand(level))
+    }
+
     fun findDevice(enable: Boolean = true) {
         if (enable) {
             sendCommand(WearfitProtocol.buildFindDeviceCommand(true))
