@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnSyncHealth.setOnClickListener {
-            bleManager.queryHealth()
+            bleManager.queryHealthData(triggerOptical = true)
             Toast.makeText(this, "Sensörler 15 sn okuyup otomatik kapanacak", Toast.LENGTH_SHORT).show()
         }
 

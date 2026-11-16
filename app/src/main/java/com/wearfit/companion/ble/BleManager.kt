@@ -55,7 +55,6 @@ class BleManager private constructor(private val context: Context) {
 
     private var lastConnectedAddress: String? = "C9:01:00:08:5C:A5"
     private var isExplicitDisconnect = false
-    private var keepAliveJob: Job? = null
     private var reconnectJob: Job? = null
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -93,7 +92,6 @@ class BleManager private constructor(private val context: Context) {
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(TAG, "Disconnected from watch callback (status=$status, gatt=$gatt, active=$bluetoothGatt)")
-                    stopKeepAlive()
                     try {
                         gatt?.close()
                     } catch (_: Exception) {}
@@ -102,7 +100,7 @@ class BleManager private constructor(private val context: Context) {
                         _watchData.value = _watchData.value.copy(isConnected = false)
                         cleanUp()
                         if (!isExplicitDisconnect) {
-                            Log.i(TAG, "Unexpected disconnect (status=$status). Triggering auto-reconnect...")
+                            Log.i(TAG, "Unexpected disconnect (status=$status). Scheduling auto-reconnect...")
                             scheduleAutoReconnect()
                         }
                     }
@@ -219,22 +217,21 @@ class BleManager private constructor(private val context: Context) {
             Log.i(TAG, "Services discovered. Connected & Ready.")
             reconnectJob?.cancel()
 
-            // Request balanced priority to ensure BLE link stability
+            // Request LOW POWER priority to maximize watch battery life (allows slave latency)
             try {
-                gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED)
+                gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER)
             } catch (_: Exception) {}
 
             WearfitForegroundService.start(context)
-            startKeepAlive()
 
-            // Send handshake and sync commands after a short stabilization delay
+            // Send handshake and initial sync commands without waking optical sensor
             scope.launch {
                 delay(600)
                 syncTime()
                 delay(300)
                 queryBattery()
                 delay(300)
-                queryHealth()
+                queryHealthData(triggerOptical = false)
                 startPeriodicHealthSync()
             }
         }
@@ -374,7 +371,6 @@ class BleManager private constructor(private val context: Context) {
         isDisconnecting = true
         isExplicitDisconnect = true
         reconnectJob?.cancel()
-        stopKeepAlive()
         try {
             Log.i(TAG, "Explicit user disconnect requested")
             WearfitForegroundService.stop(context)
@@ -483,33 +479,12 @@ class BleManager private constructor(private val context: Context) {
         return sendCommand(WearfitProtocol.buildBatteryQueryCommand())
     }
 
-    private fun startKeepAlive() {
-        keepAliveJob?.cancel()
-        keepAliveJob = scope.launch {
-            Log.i(TAG, "Starting BLE keep-alive heartbeat loop (every 20s)")
-            while (isActive && _connectionState.value == ConnectionState.CONNECTED) {
-                delay(20_000L) // Ping every 20s to prevent HCI Supervision Timeout (status=8)
-                if (_connectionState.value == ConnectionState.CONNECTED) {
-                    val sent = queryBattery()
-                    if (!sent) {
-                        Log.w(TAG, "Keep-alive ping could not be sent")
-                    }
-                }
-            }
-        }
-    }
-
-    private fun stopKeepAlive() {
-        keepAliveJob?.cancel()
-        keepAliveJob = null
-    }
-
     fun scheduleAutoReconnect() {
         if (isExplicitDisconnect) return
         reconnectJob?.cancel()
         reconnectJob = scope.launch {
             Log.i(TAG, "Auto-reconnect scheduler active")
-            var retryDelayMs = 2000L
+            var retryDelayMs = 3000L
             while (isActive && _connectionState.value != ConnectionState.CONNECTED && !isExplicitDisconnect) {
                 delay(retryDelayMs)
                 if (_connectionState.value == ConnectionState.CONNECTED || isExplicitDisconnect) break
@@ -519,12 +494,13 @@ class BleManager private constructor(private val context: Context) {
                 val initiated = connectAddress(targetAddress)
                 if (initiated) {
                     var waited = 0L
-                    while (waited < 8000L && _connectionState.value != ConnectionState.CONNECTED && !isExplicitDisconnect) {
+                    while (waited < 10000L && _connectionState.value != ConnectionState.CONNECTED && !isExplicitDisconnect) {
                         delay(500L)
                         waited += 500L
                     }
                 }
-                retryDelayMs = (retryDelayMs * 1.5).toLong().coerceAtMost(12000L)
+                // Gentle backoff delay up to 30s to conserve battery when watch is out of range
+                retryDelayMs = (retryDelayMs * 1.5).toLong().coerceAtMost(30000L)
             }
         }
     }
@@ -535,13 +511,20 @@ class BleManager private constructor(private val context: Context) {
         return connectAddress(address)
     }
 
-    fun queryHealth() {
+    /**
+     * Queries health data from watch.
+     * @param triggerOptical If false, only reads memory records without activating green PPG LEDs.
+     *                       If true (manual user click), turns on optical sensor for 15s.
+     */
+    fun queryHealthData(triggerOptical: Boolean = false) {
         sendCommand(WearfitProtocol.buildStepsQueryCommand())
         scope.launch {
             delay(250)
-            sendCommand(WearfitProtocol.buildBatteryQueryCommand())
-            delay(250)
-            startHeartRateMeasurement()
+            queryBattery()
+            if (triggerOptical) {
+                delay(250)
+                startHeartRateMeasurement()
+            }
         }
     }
 
@@ -565,13 +548,11 @@ class BleManager private constructor(private val context: Context) {
     private fun startPeriodicHealthSync() {
         periodicJob?.cancel()
         periodicJob = scope.launch {
-            while (isActive) {
+            while (isActive && _connectionState.value == ConnectionState.CONNECTED) {
                 delay(5 * 60 * 1000L) // Every 5 minutes
                 if (_connectionState.value == ConnectionState.CONNECTED) {
-                    Log.i(TAG, "Periodic 5-minute health reading triggered")
-                    queryHealth()
-                } else {
-                    break
+                    Log.i(TAG, "Periodic 5-minute health sync (memory only, optical LED OFF)")
+                    queryHealthData(triggerOptical = false)
                 }
             }
         }
